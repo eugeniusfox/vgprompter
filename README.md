@@ -20,3 +20,9 @@ Nothing in the script ever gets evaluated; logic can only be embedded by referen
 
 ##Documentation
 See the [wiki](https://github.com/eugeniusfox/vgprompter/wiki) or jump straight to the [quickstart](https://github.com/eugeniusfox/vgprompter/wiki/Quickstart)!
+
+##To do
+Lots; *exempli gratia*:
+- write better tests;
+- write better documentation;
+- add the `not` operator.
