@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{2229A66D-6DE9-4664-BBE2-77B56BF91E25}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VGPrompter</RootNamespace>
+    <AssemblyName>VGPrompter</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\..\Public\Documents\Unity Projects\InteractiveNovelDemo\Assets\Plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\..\Public\Documents\Unity Projects\InteractiveNovelDemo\Assets\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ScriptLogic.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="Misc.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Script\Internal\Script.IWrappable.cs" />
+    <Compile Include="Script\Public\Script.ReferenceWrapper.cs" />
+    <Compile Include="Script\Public\Script.LineWrapper.cs" />
+    <Compile Include="Script\Public\Script.ChoiceWrapper.cs" />
+    <Compile Include="Script\Public\Script.MenuWrapper.cs" />
+    <Compile Include="Script\Internal\Script.Block.cs" />
+    <Compile Include="Script\Internal\Script.Container.cs" />
+    <Compile Include="Script\Internal\Script.Choice.cs" />
+    <Compile Include="Script\Internal\Script.Conditional.cs" />
+    <Compile Include="Script\Script.cs" />
+    <Compile Include="Script\Internal\Script.DummyLine.cs" />
+    <Compile Include="Script\Internal\Script.GoTo.cs" />
+    <Compile Include="Script\Internal\Script.IConditional.cs" />
+    <Compile Include="Script\Internal\Script.ChildContainer.cs" />
+    <Compile Include="Script\Internal\Script.IfElse.cs" />
+    <Compile Include="Script\Internal\Script.IterableContainer.cs" />
+    <Compile Include="Script\Internal\Script.Line.cs" />
+    <Compile Include="Script\Internal\Script.PickableContainer.cs" />
+    <Compile Include="Script\Internal\Script.DialogueLine.cs" />
+    <Compile Include="Script\Internal\Script.Menu.cs" />
+    <Compile Include="Script\Parser\Script.Parser.cs" />
+    <Compile Include="Script\Parser\Script.Parser.Node.cs" />
+    <Compile Include="Script\Internal\Script.Pass.cs" />
+    <Compile Include="Script\Internal\Script.Reference.cs" />
+    <Compile Include="Script\Internal\Script.Return.cs" />
+    <Compile Include="Script\Public\Script.IScriptLineWrapper.cs" />
+    <Compile Include="Script\Internal\Script.While.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
