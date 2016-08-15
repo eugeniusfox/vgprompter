@@ -188,13 +188,6 @@ namespace VGPrompter {
             IsPrimed = true;
         }
 
-        public Script(ScriptLogic logic, string starting_label = "start")
-            : this(logic.Conditions, logic.Actions, starting_label) { }
-
-        public void SetDelegates(ScriptLogic logic) {
-            SetDelegates(logic.Conditions, logic.Actions);
-        }
-
         public void SetDelegates(Dictionary<string, Func<bool>> conditions, Dictionary<string, Action> actions) {
             Conditions = conditions;
             Actions = actions;
