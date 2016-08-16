@@ -7,21 +7,21 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class IfElse : PickableContainer<Conditional> {
+        class VGPIfElse : PickableContainer<Conditional> {
 
-            public IfElse(Block parent) {
+            public VGPIfElse(VGPBlock parent) {
                 Parent = parent;
                 Contents = new List<Conditional>();
             }
 
             public bool IsClosed { get { return !IsEmpty && Contents.Last() is Conditional.Else; } }
 
-            public IfElse(Conditional first_condition, Block parent)
+            public VGPIfElse(Conditional first_condition, VGPBlock parent)
                 : this(parent) {
                 Contents.Add(first_condition);
             }
 
-            public IfElse(List<Conditional> conditions, Block parent)
+            public VGPIfElse(List<Conditional> conditions, VGPBlock parent)
                 : this(parent) {
                 Contents = conditions;
             }

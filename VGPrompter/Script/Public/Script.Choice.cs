@@ -4,14 +4,14 @@ namespace VGPrompter {
 
     public partial class Script {
 
-        public class ChoiceWrapper : IScriptLineWrapper {
+        public class Choice : IScriptLine {
 
             public int Index { get; private set; }
             public string Tag { get; private set; }
             public string Text { get; private set; }
             public bool IsTrue { get; set; }
 
-            public ChoiceWrapper(int index, string text, bool is_true, string tag = null) {
+            public Choice(int index, string text, bool is_true, string tag = null) {
 
                 Index = index;
                 Tag = tag ?? string.Empty;

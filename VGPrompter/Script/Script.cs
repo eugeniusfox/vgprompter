@@ -14,7 +14,7 @@ namespace VGPrompter {
             DEFAULT_STARTING_LABEL = "start",
             COMMA = ", ";
 
-        Dictionary<string, Block> Blocks { get; set; }
+        Dictionary<string, VGPBlock> Blocks { get; set; }
         public Dictionary<string, Func<bool>> Conditions { get; set; }
         public Dictionary<string, Action> Actions { get; set; }
         public string StartingLabel { get; set; }
@@ -23,7 +23,7 @@ namespace VGPrompter {
         public bool RepeatLastLineOnRecover { get; set; }
         int CurrentIterableLineOffset { get { return RepeatLastLineOnRecover ? 1 : 0; } }
 
-        Block Start { get { return Blocks[StartingLabel]; } }
+        VGPBlock Start { get { return Blocks[StartingLabel]; } }
 
         /* Recover */
         IterableContainer CurrentIterable { get; set; }
@@ -39,38 +39,38 @@ namespace VGPrompter {
 
         IEnumerator GetAnyEnumerator(
             IterableContainer container,
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator> OnMenu,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator> OnMenu,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return container.GetEnumerator(OnLine, OnMenu, OnReturn, OnReference);
         }
 
         public IEnumerator GetStartingEnumerator(
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator> OnMenu,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator> OnMenu,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return GetAnyEnumerator(Start, OnLine, OnMenu, OnReturn, OnReference);
         }
 
         public IEnumerator GetCurrentEnumerator(
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator> OnMenu,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator> OnMenu,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return GetAnyEnumerator(CurrentIterable ?? Start, OnLine, OnMenu, OnReturn, OnReference);
         }
 
         public IEnumerator GetLabelEnumerator(
             string label,
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator> OnMenu,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator> OnMenu,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return GetAnyEnumerator(GetLabel(label), OnLine, OnMenu, OnReturn, OnReference);
         }
@@ -79,32 +79,32 @@ namespace VGPrompter {
 
         IEnumerator GetAnyEnumerator(
             IterableContainer container,
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator<int?>> SelectChoice,
-            Func<MenuWrapper, ChoiceWrapper, IEnumerator> OnChoiceSelected,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator<int?>> SelectChoice,
+            Func<Menu, Choice, IEnumerator> OnChoiceSelected,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return container.GetEnumerator(OnLine, SelectChoice, OnChoiceSelected, OnReturn, OnReference);
         }
 
         public IEnumerator GetCurrentEnumerator(
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator<int?>> SelectChoice,
-            Func<MenuWrapper, ChoiceWrapper, IEnumerator> OnChoiceSelected,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator<int?>> SelectChoice,
+            Func<Menu, Choice, IEnumerator> OnChoiceSelected,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return GetAnyEnumerator(CurrentIterable ?? Start, OnLine, SelectChoice, OnChoiceSelected, OnReturn, OnReference);
         }
 
         public IEnumerator GetLabelEnumerator(
             string label,
-            Func<LineWrapper, IEnumerator> OnLine,
-            Func<MenuWrapper, IEnumerator<int?>> SelectChoice,
-            Func<MenuWrapper, ChoiceWrapper, IEnumerator> OnChoiceSelected,
+            Func<DialogueLine, IEnumerator> OnLine,
+            Func<Menu, IEnumerator<int?>> SelectChoice,
+            Func<Menu, Choice, IEnumerator> OnChoiceSelected,
             Func<IEnumerator> OnReturn = null,
-            Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+            Func<Reference, IEnumerator> OnReference = null) {
 
             return GetAnyEnumerator(GetLabel(label), OnLine, SelectChoice, OnChoiceSelected, OnReturn, OnReference);
         }
@@ -123,7 +123,7 @@ namespace VGPrompter {
             return GetAnyWrapperEnumerator(GetLabel(label));
         }
 
-        Block GetLabel(string label) {
+        VGPBlock GetLabel(string label) {
             if (!Blocks.ContainsKey(label))
                 throw new Exception("Invalid label!");
             return Blocks[label];
@@ -168,7 +168,7 @@ namespace VGPrompter {
             IsPrimed = false;
             CurrentBlockID = 0;
             StartingLabel = DEFAULT_STARTING_LABEL;
-            Blocks = new Dictionary<string, Block>();
+            Blocks = new Dictionary<string, VGPBlock>();
         }
 
         public Script(Dictionary<string, Func<bool>> conditions, Dictionary<string, Action> actions, string starting_label = DEFAULT_STARTING_LABEL)
@@ -195,7 +195,7 @@ namespace VGPrompter {
 
         /* CONSUMPTION */
 
-        public IEnumerator<IScriptLineWrapper> GetEnumerator() {
+        public IEnumerator<IScriptLine> GetEnumerator() {
 
             HasReturned = false;
 
@@ -207,7 +207,7 @@ namespace VGPrompter {
             }
         }
 
-        void RunIterable(Func<MenuWrapper, int> OnMenu, Action<LineWrapper> OnLine, IterableContainer c, Action<ReferenceWrapper> OnReference = null, int? Take = null) {
+        void RunIterable(Func<Menu, int> OnMenu, Action<DialogueLine> OnLine, IterableContainer c, Action<Reference> OnReference = null, int? Take = null) {
 
             var i = Take.GetValueOrDefault();
 
@@ -215,9 +215,9 @@ namespace VGPrompter {
 
                 if (Take != null && --i < 0) break;
 
-                if (x is MenuWrapper) {
+                if (x is Menu) {
 
-                    var menu = x as MenuWrapper;
+                    var menu = x as Menu;
                     var ichoice = OnMenu(menu);
 
                     if (ichoice < 0 || ichoice >= menu.Count)
@@ -225,13 +225,13 @@ namespace VGPrompter {
 
                     CurrentChoiceIndex = (uint)ichoice;
 
-                } else if (x is LineWrapper) {
+                } else if (x is DialogueLine) {
 
-                    OnLine(x as LineWrapper);
+                    OnLine(x as DialogueLine);
 
-                } else if (x is ReferenceWrapper) {
+                } else if (x is Reference) {
 
-                    var reference = x as ReferenceWrapper;
+                    var reference = x as Reference;
                     if (OnReference == null) {
                         reference.Action();
                     } else {
@@ -247,11 +247,11 @@ namespace VGPrompter {
             }
         }
 
-        public void RunFromCurrentLine(Func<MenuWrapper, int> OnMenu, Action<LineWrapper> OnLine, Action<ReferenceWrapper> OnReference = null, int? Take = null) {
+        public void RunFromCurrentLine(Func<Menu, int> OnMenu, Action<DialogueLine> OnLine, Action<Reference> OnReference = null, int? Take = null) {
             RunIterable(OnMenu, OnLine, CurrentIterable ?? Start, OnReference, Take);
         }
 
-        public void RunFromBeginning(Func<MenuWrapper, int> OnMenu, Action<LineWrapper> OnLine, Action<ReferenceWrapper> OnReference = null, int? Take = null) {
+        public void RunFromBeginning(Func<Menu, int> OnMenu, Action<DialogueLine> OnLine, Action<Reference> OnReference = null, int? Take = null) {
             RunIterable(OnMenu, OnLine, Start, OnReference, Take);
         }
 

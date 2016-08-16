@@ -2,12 +2,12 @@
 
     public partial class Script {
 
-        public class LineWrapper : IScriptLineWrapper {
+        public class DialogueLine : IScriptLine {
 
             public string Tag { get; private set; }
             public string Text { get; private set; }
 
-            public LineWrapper(string text, string tag = null) {
+            public DialogueLine(string text, string tag = null) {
                 Tag = tag ?? string.Empty;
                 Text = text;
             }

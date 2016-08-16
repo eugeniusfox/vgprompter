@@ -6,14 +6,14 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        abstract class Choice : IterableContainer, IConditional {
+        abstract class VGPChoice : IterableContainer, IConditional {
 
             [Serializable]
-            public class NamedChoice : Choice {
+            public class VGPNamedChoice : VGPChoice {
                 public string Label { get; private set; }
 
-                public NamedChoice() { }
-                public NamedChoice(string label, string text, Block parent, string condition_label = null)
+                public VGPNamedChoice() { }
+                public VGPNamedChoice(string label, string text, VGPBlock parent, string condition_label = null)
                     : base(text, parent, condition_label) {
                     Label = label;
                 }
@@ -26,23 +26,23 @@ namespace VGPrompter {
                     return string.Format(@"{0} ""{1}"" {2}", Label, Text, Condition.Method.Name);
                 }
 
-                public override ChoiceWrapper ToWrapper(int index) {
-                    return new ChoiceWrapper(index, Text, IsTrue, Label);
+                public override Choice ToWrapper(int index) {
+                    return new Choice(index, Text, IsTrue, Label);
                 }
             }
 
             [Serializable]
-            public class AnonymousChoice : Choice {
-                public AnonymousChoice() { }
-                public AnonymousChoice(string text, Block parent, string condition_label = null)
+            public class VGPAnonymousChoice : VGPChoice {
+                public VGPAnonymousChoice() { }
+                public VGPAnonymousChoice(string text, VGPBlock parent, string condition_label = null)
                     : base(text, parent, condition_label) { }
 
                 public new string ToString() {
                     return string.Format(@"""{1}"" {2}", Text, Condition.Method.Name);
                 }
 
-                public override ChoiceWrapper ToWrapper(int index) {
-                    return new ChoiceWrapper(index, Text, IsTrue);
+                public override Choice ToWrapper(int index) {
+                    return new Choice(index, Text, IsTrue);
                 }
             }
 
@@ -51,13 +51,13 @@ namespace VGPrompter {
             public string Text { get; private set; }
             public bool IsTrue { get { return Condition == null || Condition(); } }
 
-            public abstract ChoiceWrapper ToWrapper(int index);
+            public abstract Choice ToWrapper(int index);
 
-            public Choice() {
+            public VGPChoice() {
                 Contents = new List<Line>();
             }
 
-            public Choice(string text, Block parent, string condition_label = null)
+            public VGPChoice(string text, VGPBlock parent, string condition_label = null)
                 : this() {
                 Text = text;
                 Tag = condition_label;

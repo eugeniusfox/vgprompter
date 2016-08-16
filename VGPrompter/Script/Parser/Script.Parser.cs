@@ -192,10 +192,10 @@ namespace VGPrompter {
                 return script;
             }
 
-            static Script blocks2script(List<Block> blocks) {
+            static Script blocks2script(List<VGPBlock> blocks) {
                 var script = new Script() {
                     Blocks = blocks
-                        .Select(x => new KeyValuePair<string, Block>(x.Label, x))
+                        .Select(x => new KeyValuePair<string, VGPBlock>(x.Label, x))
                         .ToDictionary(x => x.Key, x => x.Value)
                 };
 
@@ -223,13 +223,13 @@ namespace VGPrompter {
             }
 
             static Script tree2script(Node root_node) {
-                Block block;
-                var blocks = new List<Block>();
+                VGPBlock block;
+                var blocks = new List<VGPBlock>();
 
                 foreach (var node in root_node.Children) {
                     // Format checks were performed in a previous step
 
-                    block = node2ILine(node, null, null) as Block;
+                    block = node2ILine(node, null, null) as VGPBlock;
                     //Logger.Log(block.ToString());
 
                     blocks.Add(block);
@@ -238,12 +238,12 @@ namespace VGPrompter {
                 return blocks2script(blocks);
             }
 
-            static Line node2ILine(Node node, Type parent_type, Block block) {
+            static Line node2ILine(Node node, Type parent_type, VGPBlock block) {
                 Line iline = null;
                 var line = node.Label;
                 var n = line.Length;
                 string[] tokens;
-                Block current_block = block;
+                VGPBlock current_block = block;
 
                 if (node.IsEmpty) {
 
@@ -267,11 +267,11 @@ namespace VGPrompter {
                     // Node
 
                     var contents = new List<Line>();
-                    var ifelse = new IfElse(current_block);
+                    var ifelse = new VGPIfElse(current_block);
 
                     if (unsupported_renpy_block_re.IsMatch(line)) {
                         Logger.Log(string.Format("Ignoring Ren'Py block '{0}'", line));
-                        return new Pass();
+                        return new VGPPass();
                     }
 
                     if (line[n - 1] != COLON) throw new Exception("Missing colon!");
@@ -287,18 +287,18 @@ namespace VGPrompter {
                         // Block
 
                         tokens = line.Substring(0, n - 1).Split(WHITESPACE);
-                        iline = new Block(tokens[1]);
+                        iline = new VGPBlock(tokens[1]);
 
-                        current_block = iline as Block;
+                        current_block = iline as VGPBlock;
 
-                    } else if (parent_type == typeof(Menu)) {
+                    } else if (parent_type == typeof(VGPMenu)) {
                         iline = GetChoiceNode(trimmed_line, current_block);
                     } else {
                         iline = GetNode(trimmed_line.Split(WHITESPACE), current_block);
                     }
 
                     if (iline == null) throw new Exception(string.Format("Null node from line '{0}'", line));
-                    if (iline is Choice && parent_type != typeof(Menu)) throw new Exception("Choice out of menu!");
+                    if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception("Choice out of menu!");
 
                     foreach (var child in node.Children) {
                         var tmp = node2ILine(child, iline.GetType(), current_block);
@@ -318,10 +318,10 @@ namespace VGPrompter {
                     if (!ifelse.IsEmpty)
                         AddIfElse(ref ifelse, ref contents);
 
-                    if (iline is Menu) {
-                        (iline as Menu).Contents = contents.Select(x => x as Choice).ToList();
-                    } else if (iline is IfElse) {
-                        (iline as IfElse).Contents = contents.Select(x => x as Conditional).ToList();
+                    if (iline is VGPMenu) {
+                        (iline as VGPMenu).Contents = contents.Select(x => x as VGPChoice).ToList();
+                    } else if (iline is VGPIfElse) {
+                        (iline as VGPIfElse).Contents = contents.Select(x => x as Conditional).ToList();
                     } else if (iline is IterableContainer) {
                         (iline as IterableContainer).Contents = contents;
                     } else {
@@ -332,9 +332,9 @@ namespace VGPrompter {
                 return iline;
             }
 
-            static void AddIfElse(ref IfElse ifelse, ref List<Line> output) {
+            static void AddIfElse(ref VGPIfElse ifelse, ref List<Line> output) {
                 output.Add(ifelse);
-                ifelse = new IfElse(ifelse.Parent);
+                ifelse = new VGPIfElse(ifelse.Parent);
             }
 
             static int GetIndent(string s, char indent) {
@@ -343,13 +343,13 @@ namespace VGPrompter {
                 return k;
             }
 
-            static Choice GetChoiceNode(string line, Block parent) {
+            static VGPChoice GetChoiceNode(string line, VGPBlock parent) {
                 var m = choice_re.Match(line);
                 if (!m.Success) throw new Exception("Invalid Choice!");
                 if (string.IsNullOrEmpty(m.Groups[1].Value)) {
-                    return new Choice.AnonymousChoice(m.Groups[2].Value, parent, m.Groups[3].Value);
+                    return new VGPChoice.VGPAnonymousChoice(m.Groups[2].Value, parent, m.Groups[3].Value);
                 } else {
-                    return new Choice.NamedChoice(m.Groups[1].Value, m.Groups[2].Value, parent, m.Groups[3].Value);
+                    return new VGPChoice.VGPNamedChoice(m.Groups[1].Value, m.Groups[2].Value, parent, m.Groups[3].Value);
                 }
             }
 
@@ -384,12 +384,12 @@ namespace VGPrompter {
                 return result;
             }
 
-            static DialogueLine GetLineLeaf(string line) {
+            static VGPDialogueLine GetLineLeaf(string line) {
                 var m = line_re.Match(line);
 
                 if (!m.Success) throw new Exception(string.Format("Invalid Line '{0}'!", line));
 
-                return new DialogueLine(m.Groups[1].Value, m.Groups[2].Value);
+                return new VGPDialogueLine(m.Groups[1].Value, m.Groups[2].Value);
             }
 
             static Line GetFunctionalLeaf(string[] tokens) {
@@ -399,24 +399,24 @@ namespace VGPrompter {
 
                     case PASS:
                         if (n != 1) throw new Exception("Invalid Pass!");
-                        return new Pass();
+                        return new VGPPass();
                     case RETURN:
                         if (n != 1) throw new Exception("Invalid Return!");
-                        return new Return();
+                        return new VGPReturn();
                     case JUMP:
                         if (n != 2) throw new Exception("Invalid Jump!");
-                        return new GoTo(tokens[1], is_call: false);
+                        return new VGPGoTo(tokens[1], is_call: false);
                     case CALL:
                         if (n != 2) throw new Exception("Invalid Call!");
-                        return new GoTo(tokens[1], is_call: true);
+                        return new VGPGoTo(tokens[1], is_call: true);
                     default:
                         if (n != 1) throw new Exception("Invalid Reference!");
-                        return new Reference(tokens[0]);
+                        return new VGPReference(tokens[0]);
                 }
 
             }
 
-            static Line GetNode(string[] tokens, Block parent) {
+            static Line GetNode(string[] tokens, VGPBlock parent) {
 
                 var n = tokens.Length;
 
@@ -426,7 +426,7 @@ namespace VGPrompter {
 
                     case MENU:
                         if (n != 1) throw new Exception("Invalid Menu!");
-                        return new Menu(parent);
+                        return new VGPMenu(parent);
                     case IF:
                         if (n != 2) throw new Exception("Invalid If!");
                         return new Conditional.If(tokens[1], parent);
@@ -440,7 +440,7 @@ namespace VGPrompter {
 
                     case WHILE:
                         if (n != 2) throw new Exception("Invalid While!");
-                        return new While(tokens[1], parent);
+                        return new VGPWhile(tokens[1], parent);
 
                     default:
                         Utils.LogArray("Invalid node", tokens, Logger);

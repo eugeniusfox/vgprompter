@@ -13,24 +13,24 @@ namespace VGPrompter {
 
             [Serializable]
             public class If : Conditional {
-                public If(string label, Block parent = null) : base(label, parent) { }
+                public If(string label, VGPBlock parent = null) : base(label, parent) { }
             }
 
             [Serializable]
             public class ElseIf : Conditional {
-                public ElseIf(string label, Block parent = null) : base(label, parent) { }
+                public ElseIf(string label, VGPBlock parent = null) : base(label, parent) { }
             }
 
             [Serializable]
             public class Else : Conditional {
-                public Else(Block parent = null) : base(TRUE, parent) { }
+                public Else(VGPBlock parent = null) : base(TRUE, parent) { }
             }
 
             public Conditional() {
                 InitializeContainer();
             }
 
-            Conditional(string label, Block parent = null)
+            Conditional(string label, VGPBlock parent = null)
                 : this() {
                 Tag = label;
                 Parent = parent;

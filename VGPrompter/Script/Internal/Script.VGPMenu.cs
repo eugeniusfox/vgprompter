@@ -7,20 +7,20 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class Menu : PickableContainer<Choice>, IWrappable {
+        class VGPMenu : PickableContainer<VGPChoice>, IWrappable {
 
-            public Menu(Block parent) {
+            public VGPMenu(VGPBlock parent) {
                 Parent = parent;
                 InitializeContainer();
             }
 
-            public Menu(List<Choice> choices, Block parent)
+            public VGPMenu(List<VGPChoice> choices, VGPBlock parent)
                 : this(parent) {
-                Contents = choices ?? new List<Choice>();
+                Contents = choices ?? new List<VGPChoice>();
             }
 
-            public Menu FilteredMenu() {
-                return IsEmpty() ? null : new Menu(Contents.FindAll(
+            public VGPMenu FilteredMenu() {
+                return IsEmpty() ? null : new VGPMenu(Contents.FindAll(
                     x => x.Condition == null || x.Condition() == true), Parent);
             }
 
@@ -29,7 +29,7 @@ namespace VGPrompter {
                     x => x.Condition != null && x.Condition() == false);
             }
 
-            public override Choice GetContent() {
+            public override VGPChoice GetContent() {
                 return null;
             }
 
@@ -43,9 +43,9 @@ namespace VGPrompter {
                     item.Prime();
             }
 
-            public IScriptLineWrapper ToWrapper() {
+            public IScriptLine ToWrapper() {
 
-                return new MenuWrapper(Contents
+                return new Menu(Contents
                     .Select((x, i) => x.ToWrapper(i))
                     .ToList());
 

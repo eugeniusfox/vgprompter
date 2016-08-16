@@ -4,12 +4,12 @@ namespace VGPrompter {
 
     public partial class Script {
 
-        public class ReferenceWrapper : IScriptLineWrapper {
+        public class Reference : IScriptLine {
 
             public string Tag { get; private set; }
             public Action Action { get; private set; }
 
-            public ReferenceWrapper(string tag, Action action) {
+            public Reference(string tag, Action action) {
                 Tag = tag;
                 Action = action;
             }

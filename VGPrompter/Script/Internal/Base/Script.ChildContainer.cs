@@ -8,9 +8,9 @@ namespace VGPrompter {
         abstract class ChildContainer<T> : Container<T> where T : Line {
 
             Script _script;
-            Block _parent;
+            VGPBlock _parent;
 
-            public Block Parent {
+            public VGPBlock Parent {
                 get {
                     return _parent;
                 }

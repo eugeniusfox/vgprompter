@@ -5,7 +5,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class Pass : DummyLine { }
+        class VGPPass : DummyLine { }
 
     }
 

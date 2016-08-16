@@ -5,7 +5,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class While : IterableContainer, IConditional {
+        class VGPWhile : IterableContainer, IConditional {
 
             public string Tag { get; private set; }
             public static uint MaxIterations = 100;
@@ -14,11 +14,11 @@ namespace VGPrompter {
             public uint Iterations { get; private set; }
             public Func<bool> Condition { get; set; }
 
-            public While() {
+            public VGPWhile() {
                 InitializeContainer();
             }
 
-            public While(string label, Block parent)
+            public VGPWhile(string label, VGPBlock parent)
                 : this() {
                 Tag = label;
                 Parent = parent;

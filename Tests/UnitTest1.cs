@@ -56,8 +56,8 @@ namespace Tests {
             script.Prime();
             script.Validate();
             foreach (var x in script) {
-                if (x is Script.MenuWrapper)
-                    script.CurrentChoiceIndex = (uint)SelectChoice(x as Script.MenuWrapper);
+                if (x is Script.Menu)
+                    script.CurrentChoiceIndex = (uint)SelectChoice(x as Script.Menu);
                 Console.WriteLine(x.ToString());
             }
         }
@@ -140,7 +140,7 @@ namespace Tests {
             );
         }
 
-        int SelectChoice(Script.MenuWrapper menu) {
+        int SelectChoice(Script.Menu menu) {
             return (new Random()).Next(menu.Count - 1);
         }
 

@@ -5,12 +5,12 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class Reference : Line, IWrappable {
+        class VGPReference : Line, IWrappable {
 
             public string Tag { get; private set; }
             public Action Action { get; set; }
 
-            public Reference(string label) {
+            public VGPReference(string label) {
                 Tag = label;
             }
 
@@ -18,8 +18,8 @@ namespace VGPrompter {
                 return Action != null;
             }
 
-            public IScriptLineWrapper ToWrapper() {
-                return new ReferenceWrapper(Tag, Action);
+            public IScriptLine ToWrapper() {
+                return new Reference(Tag, Action);
             }
         }
 

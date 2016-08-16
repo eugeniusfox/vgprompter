@@ -5,7 +5,7 @@ namespace VGPrompter {
 
     public partial class Script {
 
-        public class MenuWrapper : IScriptLineWrapper {
+        public class Menu : IScriptLine {
 
             const string MENU = "MENU";
 
@@ -17,13 +17,13 @@ namespace VGPrompter {
                 get { return Choices != null ? Choices.Count(x => x.IsTrue) : 0; }
             }
 
-            public List<ChoiceWrapper> Choices { get; private set; }
+            public List<Choice> Choices { get; private set; }
 
-            public List<ChoiceWrapper> TrueChoices {
+            public List<Choice> TrueChoices {
                 get { return Choices.Where(x => x.IsTrue).ToList(); }
             }
 
-            public MenuWrapper(List<ChoiceWrapper> choices) {
+            public Menu(List<Choice> choices) {
                 Choices = choices;
             }
 

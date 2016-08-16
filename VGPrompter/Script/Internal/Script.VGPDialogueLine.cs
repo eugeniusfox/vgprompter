@@ -5,14 +5,14 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class DialogueLine : Line, IWrappable {
+        class VGPDialogueLine : Line, IWrappable {
 
             public string Label { get; private set; }
             public string Text { get; private set; }
 
-            public DialogueLine() { }
+            public VGPDialogueLine() { }
 
-            public DialogueLine(string label, string text) {
+            public VGPDialogueLine(string label, string text) {
                 Label = label;
                 Text = text;
             }
@@ -23,8 +23,8 @@ namespace VGPrompter {
                 return (string.IsNullOrEmpty(Label) ? "<Anonymous>" : Label) + ": " + Text;
             }
 
-            public IScriptLineWrapper ToWrapper() {
-                return new LineWrapper(Text, Label);
+            public IScriptLine ToWrapper() {
+                return new DialogueLine(Text, Label);
             }
 
         }

@@ -6,15 +6,15 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class GoTo : Line {
+        class VGPGoTo : Line {
 
             string _target;
             public bool IsCall { get; private set; }
-            public Block Target { get; private set; }
+            public VGPBlock Target { get; private set; }
 
-            public GoTo() { }
+            public VGPGoTo() { }
 
-            public GoTo(string target_label, bool is_call) {
+            public VGPGoTo(string target_label, bool is_call) {
                 _target = target_label;
                 IsCall = is_call;
             }
@@ -23,7 +23,7 @@ namespace VGPrompter {
                 Target = script.Blocks[_target];
             }
 
-            protected GoTo(SerializationInfo info, StreamingContext context) {
+            protected VGPGoTo(SerializationInfo info, StreamingContext context) {
                 _target = info.GetString("target");
                 IsCall = info.GetBoolean("is_call");
             }

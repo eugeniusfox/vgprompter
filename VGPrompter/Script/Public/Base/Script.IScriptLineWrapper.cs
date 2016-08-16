@@ -2,8 +2,8 @@
 
     public partial class Script {
 
-        interface IWrappable {
-            IScriptLineWrapper ToWrapper();
+        public interface IScriptLine {
+            string ToString();
         }
 
     }

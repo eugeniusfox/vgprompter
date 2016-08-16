@@ -36,21 +36,21 @@ namespace VGPrompter {
                 if (Contents == null)
                     Script.Logger.Log("Null contents!");
                 foreach (var item in Contents) {
-                    if (item is Reference) {
-                        var reference = item as Reference;
+                    if (item is VGPReference) {
+                        var reference = item as VGPReference;
                         reference.Action = Script.GetAction(reference.Tag);
                         Script.Logger.Log(reference.Action);
                     } else if (item is Conditional) {
                         (item as Conditional).Prime();
-                    } else if (item is Choice) {
-                        (item as Choice).Prime();
-                    } else if (item is GoTo) {
-                        var gt = item as GoTo;
+                    } else if (item is VGPChoice) {
+                        (item as VGPChoice).Prime();
+                    } else if (item is VGPGoTo) {
+                        var gt = item as VGPGoTo;
                         gt.SetTarget(Script);
-                    } else if (item is Menu) {
-                        (item as Menu).Prime();
-                    } else if (item is IfElse) {
-                        var ifelse = item as IfElse;
+                    } else if (item is VGPMenu) {
+                        (item as VGPMenu).Prime();
+                    } else if (item is VGPIfElse) {
+                        var ifelse = item as VGPIfElse;
                         ifelse.Prime();
                     } else if (item is IterableContainer) {
                         if (item is IConditional) {

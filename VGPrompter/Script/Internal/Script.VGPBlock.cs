@@ -7,22 +7,22 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class Block : IterableContainer {
+        class VGPBlock : IterableContainer {
 
             public string Label { get; private set; }
             public List<int> FromInstanceIDs { get; private set; }
 
-            public Block() {
+            public VGPBlock() {
                 FromInstanceIDs = new List<int>();
                 Contents = new List<Line>();
             }
 
-            public Block(string label)
+            public VGPBlock(string label)
                 : this() {
                 Label = label;
             }
 
-            public Block(string label, List<Line> contents)
+            public VGPBlock(string label, List<Line> contents)
                 : this(label) {
                 if (contents == null) throw new Exception("Block contents can't be null!");
                 Contents = contents;

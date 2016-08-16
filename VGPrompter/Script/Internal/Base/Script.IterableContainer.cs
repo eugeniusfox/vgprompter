@@ -12,9 +12,9 @@ namespace VGPrompter {
             int _current_index = -1;
 
             IEnumerator OnMenu(
-                MenuWrapper menu,
-                Func<MenuWrapper, IEnumerator<int?>> SelectChoice,
-                Func<MenuWrapper, ChoiceWrapper, IEnumerator> OnChoiceSelected) {
+                Menu menu,
+                Func<Menu, IEnumerator<int?>> SelectChoice,
+                Func<Menu, Choice, IEnumerator> OnChoiceSelected) {
 
                 Script.CurrentChoiceIndex = null;
 
@@ -41,22 +41,22 @@ namespace VGPrompter {
             }
 
             public IEnumerator GetEnumerator(
-                Func<LineWrapper, IEnumerator> OnLine,
-                Func<MenuWrapper, IEnumerator<int?>> SelectChoice,
-                Func<MenuWrapper, ChoiceWrapper, IEnumerator> OnChoiceSelected,
+                Func<DialogueLine, IEnumerator> OnLine,
+                Func<Menu, IEnumerator<int?>> SelectChoice,
+                Func<Menu, Choice, IEnumerator> OnChoiceSelected,
                 Func<IEnumerator> OnReturn = null,
-                Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+                Func<Reference, IEnumerator> OnReference = null) {
 
                 yield return GetEnumerator(OnLine, menu => OnMenu(menu, SelectChoice, OnChoiceSelected), OnReturn, OnReference);
             }
 
             public IEnumerator GetEnumerator(
-                Func<LineWrapper, IEnumerator> OnLine,
-                Func<MenuWrapper, IEnumerator> OnMenu,
+                Func<DialogueLine, IEnumerator> OnLine,
+                Func<Menu, IEnumerator> OnMenu,
                 Func<IEnumerator> OnReturn = null,
-                Func<ReferenceWrapper, IEnumerator> OnReference = null) {
+                Func<Reference, IEnumerator> OnReference = null) {
 
-                IScriptLineWrapper w;
+                IScriptLine w;
 
                 foreach (IWrappable x in this) {
 
@@ -65,19 +65,19 @@ namespace VGPrompter {
 
                     w = x.ToWrapper();
 
-                    if (w is MenuWrapper) {
+                    if (w is Menu) {
 
-                        var menu = w as MenuWrapper;
+                        var menu = w as Menu;
                         yield return OnMenu(menu);
 
-                    } else if (w is LineWrapper) {
+                    } else if (w is DialogueLine) {
 
-                        var line = w as LineWrapper;
+                        var line = w as DialogueLine;
                         yield return OnLine(line);
 
-                    } else if (w is ReferenceWrapper) {
+                    } else if (w is Reference) {
 
-                        var reference = w as ReferenceWrapper;
+                        var reference = w as Reference;
                         if (OnReference != null) {
                             yield return OnReference(reference);
                         } else {
@@ -92,7 +92,7 @@ namespace VGPrompter {
                     yield return OnReturn();
             }
 
-            public IEnumerator<IScriptLineWrapper> GetWrapperEnumerator() {
+            public IEnumerator<IScriptLine> GetWrapperEnumerator() {
                 foreach (IWrappable x in this) {
                     if (x == null) throw new Exception("Can't wrap this line!");
                     yield return x.ToWrapper();
@@ -107,7 +107,7 @@ namespace VGPrompter {
                     Script.CurrentIterableLine = -1;
                 }
 
-                var parent = this as Block ?? Parent;
+                var parent = this as VGPBlock ?? Parent;
 
                 var id = Script.CurrentBlockID++;
 
@@ -127,9 +127,9 @@ namespace VGPrompter {
                     if (Script.HasReturned || parent.FromInstanceIDs.Contains(id))
                         break;
 
-                    if (x is Menu) {
+                    if (x is VGPMenu) {
 
-                        var menu = x as Menu;
+                        var menu = x as VGPMenu;
 
                         yield return menu;
 
@@ -147,9 +147,9 @@ namespace VGPrompter {
                         foreach (var y in choice)
                             yield return y;
 
-                    } else if (x is IfElse) {
+                    } else if (x is VGPIfElse) {
 
-                        var ifelse = x as IfElse;
+                        var ifelse = x as VGPIfElse;
                         var option = ifelse.GetContent();
 
                         if (option == null)
@@ -163,9 +163,9 @@ namespace VGPrompter {
                         foreach (var y in (x as IterableContainer))
                             yield return y;
 
-                    } else if (x is GoTo) {
+                    } else if (x is VGPGoTo) {
 
-                        var gt = x as GoTo;
+                        var gt = x as VGPGoTo;
 
                         if (!gt.IsCall)
                             parent.RegisterID(id);
@@ -173,7 +173,7 @@ namespace VGPrompter {
                         foreach (var y in gt.Target)
                             yield return y;
 
-                    } else if (x is Return) {
+                    } else if (x is VGPReturn) {
 
                         Script.HasReturned = true;
                         break;
@@ -185,7 +185,7 @@ namespace VGPrompter {
                     }
                 }
 
-                if (!Script.HasReturned && this is While && (this as While).Evaluate()) {
+                if (!Script.HasReturned && this is VGPWhile && (this as VGPWhile).Evaluate()) {
                     foreach (var y in this)
                         yield return y;
                 }
