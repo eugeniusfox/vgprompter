@@ -407,18 +407,6 @@ namespace VGPrompter {
                 return new VGPDialogueLine(m.Groups[1].Value, m.Groups[2].Value);
             }
 
-            class Tuple2<T1, T2> {
-                public T1 Item1 { get; protected set; }
-                public T2 Item2 { get; protected set; }
-
-                public Tuple2() { }
- 
-                public Tuple2(T1 item1, T2 item2) : this() {
-                    Item1 = item1;
-                    Item2 = item2;
-                }
-            }
-
             struct ParserRule {
                 public string Keyword { get; private set; }
                 public Func<string[], VGPBlock, Line> Constructor { get; private set; }
@@ -431,13 +419,8 @@ namespace VGPrompter {
                 }
             }
 
-            static Line tokens2Leaf(string[] tokens) {
-                return tokens2Line(LeafRules, tokens);
-            }
 
-            static Line tokens2Node(string[] tokens, VGPBlock parent) {
-                return tokens2Line(NodeRules, tokens, parent);
-            }
+            /* From tokens to Line objects */
 
             static Line tokens2Line(ParserRule[] rules, string[] tokens, VGPBlock parent = null) {
 
@@ -451,6 +434,17 @@ namespace VGPrompter {
                 throw new Exception("Invalid line!");
 
             }
+
+            static Line tokens2Leaf(string[] tokens) {
+                return tokens2Line(LeafRules, tokens);
+            }
+
+            static Line tokens2Node(string[] tokens, VGPBlock parent) {
+                return tokens2Line(NodeRules, tokens, parent);
+            }
+
+
+            /* Load and pre-filter rows */
 
             static IEnumerable<string> ReadLines(string path, bool ignore_unsupported_renpy = false) {
                 return
@@ -466,6 +460,7 @@ namespace VGPrompter {
                             return res;
                         });
             }
+
 
             /* Deprecated, for testing purposes onlny */
 
@@ -524,6 +519,18 @@ namespace VGPrompter {
                     default:
                         Utils.LogArray("Invalid node", tokens, Logger);
                         throw new Exception("Invalid node!");
+                }
+            }
+
+            class Tuple2<T1, T2> {
+                public T1 Item1 { get; protected set; }
+                public T2 Item2 { get; protected set; }
+
+                public Tuple2() { }
+
+                public Tuple2(T1 item1, T2 item2) : this() {
+                    Item1 = item1;
+                    Item2 = item2;
                 }
             }
 
