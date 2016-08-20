@@ -338,8 +338,8 @@ namespace VGPrompter {
             }
 
             static int GetIndent(string s, char indent) {
-                Int16 k = -1;
-                while (s[++k] == indent) ;
+                int k = -1;
+                while (s[++k] == indent);
                 return k;
             }
 
