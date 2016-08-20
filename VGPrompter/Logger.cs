@@ -2,6 +2,7 @@
 
 namespace VGPrompter {
 
+    [Serializable]
     public class Logger {
 
         public bool Enabled { get; set; }
