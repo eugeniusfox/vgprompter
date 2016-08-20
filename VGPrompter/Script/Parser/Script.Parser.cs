@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
-
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace VGPrompter {
 
@@ -238,7 +238,7 @@ namespace VGPrompter {
                 return blocks2script(blocks);
             }
 
-            static Line node2ILine(Node node, Type parent_type, VGPBlock block) {
+            static Line node2ILine(Node node, Type parent_type, VGPBlock block, bool ignore_unsupported_renpy = false) {
                 Line iline = null;
                 var line = node.Label;
                 var n = line.Length;
@@ -257,7 +257,9 @@ namespace VGPrompter {
                         if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE)))
                             throw new Exception(string.Format("Invalid characters in functional line '{0}'!", line));
 
-                        iline = GetFunctionalLeaf(tokens);
+                        var iline_test = GetFunctionalLeaf(tokens);
+                        iline = tokens2Leaf(tokens);
+                        Assert.ReferenceEquals(iline, iline_test);
                     }
 
                     if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", line));
@@ -266,19 +268,15 @@ namespace VGPrompter {
 
                     // Node
 
-                    var contents = new List<Line>();
-                    var ifelse = new VGPIfElse(current_block);
-
-                    if (unsupported_renpy_block_re.IsMatch(line)) {
+                    if (ignore_unsupported_renpy && unsupported_renpy_block_re.IsMatch(line)) {
                         Logger.Log(string.Format("Ignoring Ren'Py block '{0}'", line));
                         return new VGPPass();
                     }
 
+                    var contents = new List<Line>();
+                    var ifelse = new VGPIfElse(current_block);
+
                     if (line[n - 1] != COLON) throw new Exception("Missing colon!");
-
-                    if (unsupported_renpy_block_re.Match(line).Success) {
-
-                    }
 
                     var trimmed_line = line.Substring(0, n - 1);
 
@@ -294,7 +292,9 @@ namespace VGPrompter {
                     } else if (parent_type == typeof(VGPMenu)) {
                         iline = GetChoiceNode(trimmed_line, current_block);
                     } else {
-                        iline = GetNode(trimmed_line.Split(WHITESPACE), current_block);
+                        var iline_test = GetNode(trimmed_line.Split(WHITESPACE), current_block);
+                        iline = tokens2Node(trimmed_line.Split(WHITESPACE), current_block);
+                        Assert.ReferenceEquals(iline, iline_test);
                     }
 
                     if (iline == null) throw new Exception(string.Format("Null node from line '{0}'", line));
@@ -355,7 +355,6 @@ namespace VGPrompter {
 
             static void ParseContents(string[] lines, Node parent, char indent, ref int i) {
                 Node node;
-                //var node = new Node();
                 while (++i < lines.Length) {
                     node = new Node(lines[i], indent);
                     if (node.Level > parent.Level) {
@@ -390,6 +389,68 @@ namespace VGPrompter {
                 if (!m.Success) throw new Exception(string.Format("Invalid Line '{0}'!", line));
 
                 return new VGPDialogueLine(m.Groups[1].Value, m.Groups[2].Value);
+            }
+
+            class Tuple2<T1, T2> {
+                public T1 Item1 { get; protected set; }
+                public T2 Item2 { get; protected set; }
+
+                public Tuple2() { }
+ 
+                public Tuple2(T1 item1, T2 item2) : this() {
+                    Item1 = item1;
+                    Item2 = item2;
+                }
+            }
+
+            struct ParserRule {
+                public string Keyword { get; private set; }
+                public Func<string[], VGPBlock, Line> Constructor { get; private set; }
+                public int Count { get; private set; }
+
+                public ParserRule(string keyword, Func<string[], VGPBlock, Line> constructor, int count) : this() {
+                    Keyword = keyword;
+                    Constructor = constructor;
+                    Count = count;
+                }
+            }
+
+            static ParserRule[] LeafRules = new ParserRule[] {
+                new ParserRule( PASS,         (tokens, parent) => new VGPPass(), 1),
+                new ParserRule( RETURN,       (tokens, parent) => new VGPReturn(), 1),
+                new ParserRule( JUMP,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: false), 2),
+                new ParserRule( CALL,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: true), 2),
+                new ParserRule( string.Empty, (tokens, parent) => new VGPReference(tokens[0]), 1)
+            };
+
+            static ParserRule[] NodeRules = new ParserRule[] {
+                new ParserRule( MENU,         (tokens, parent) => new VGPMenu(parent), 1),
+                new ParserRule( IF,           (tokens, parent) => new Conditional.If(tokens[1], parent), 2),
+                new ParserRule( ELIF,         (tokens, parent) => new Conditional.ElseIf(tokens[1], parent), 2),
+                new ParserRule( ELSE,         (tokens, parent) => new Conditional.Else(parent), 1),
+                new ParserRule( WHILE,        (tokens, parent) => new VGPWhile(tokens[1], parent), 2)
+            };
+
+
+            static Line tokens2Leaf(string[] tokens) {
+                return tokens2Line(LeafRules, tokens);
+            }
+
+            static Line tokens2Node(string[] tokens, VGPBlock parent) {
+                return tokens2Line(NodeRules, tokens, parent);
+            }
+
+            static Line tokens2Line(ParserRule[] rules, string[] tokens, VGPBlock parent = null) {
+
+                var first_token = tokens[0];
+
+                foreach (var rule in rules)
+                    if ((rule.Keyword == first_token || string.IsNullOrEmpty(rule.Keyword)) && tokens.Length == rule.Count)
+                        return rule.Constructor(tokens, parent);
+
+                Utils.LogArray("Invalid line", tokens, Logger);
+                throw new Exception("Invalid line!");
+
             }
 
             static Line GetFunctionalLeaf(string[] tokens) {
