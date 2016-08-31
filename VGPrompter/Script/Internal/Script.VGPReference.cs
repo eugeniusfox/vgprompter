@@ -7,8 +7,11 @@ namespace VGPrompter {
         [Serializable]
         class VGPReference : Line, IWrappable {
 
+            [NonSerialized]
+            Action _action;
+
             public string Tag { get; private set; }
-            public Action Action { get; set; }
+            public Action Action { get { return _action; } set { _action = value; } }
 
             public VGPReference(string label) {
                 Tag = label;

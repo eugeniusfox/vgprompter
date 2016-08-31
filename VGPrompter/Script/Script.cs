@@ -15,10 +15,16 @@ namespace VGPrompter {
             COMMA = ", ";
 
         Dictionary<string, VGPBlock> Blocks { get; set; }
-        public Dictionary<string, Func<bool>> Conditions { get; set; }
-        public Dictionary<string, Action> Actions { get; set; }
         public string StartingLabel { get; set; }
         public uint? CurrentChoiceIndex { get; set; }
+
+        [NonSerialized]
+        Dictionary<string, Func<bool>> _conditions;
+        [NonSerialized]
+        Dictionary<string, Action> _actions;
+
+        public Dictionary<string, Func<bool>> Conditions { get { return _conditions; } set { _conditions = value; } }
+        public Dictionary<string, Action> Actions { get { return _actions; } set { _actions = value; } }
 
         public bool RepeatLastLineOnRecover { get; set; }
         int CurrentIterableLineOffset { get { return RepeatLastLineOnRecover ? 1 : 0; } }

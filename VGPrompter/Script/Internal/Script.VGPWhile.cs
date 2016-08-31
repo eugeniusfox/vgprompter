@@ -7,12 +7,15 @@ namespace VGPrompter {
         [Serializable]
         class VGPWhile : IterableContainer, IConditional {
 
+            [NonSerialized]
+            Func<bool> _condition;
+
             public string Tag { get; private set; }
             public static uint MaxIterations = 100;
             public bool IsTrue { get { return Condition(); } }
 
             public uint Iterations { get; private set; }
-            public Func<bool> Condition { get; set; }
+            public Func<bool> Condition { get { return _condition; } set { _condition = value; } }
 
             public VGPWhile() {
                 InitializeContainer();

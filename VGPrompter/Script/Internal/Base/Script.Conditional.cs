@@ -7,8 +7,11 @@ namespace VGPrompter {
         [Serializable]
         class Conditional : IterableContainer, IConditional {
 
+            [NonSerialized]
+            Func<bool> _condition;
+
             public string Tag { get; private set; }
-            public Func<bool> Condition { get; set; }
+            public Func<bool> Condition { get { return _condition; } set { _condition = value; } }
             public bool IsTrue { get { return Condition(); } }
 
             [Serializable]
