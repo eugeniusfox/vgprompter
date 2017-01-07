@@ -77,6 +77,11 @@ namespace VGPrompter {
                 base.Prime();
             }
 
+            /*public string[] Transpile() {
+                //var choice = this.ToWrapper();
+                return new string[] {"yield return new Choice()" };
+            }*/
+
         }
 
     }

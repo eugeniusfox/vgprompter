@@ -1,0 +1,29 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+
+namespace VGPrompter {
+<# foreach (var label in Labels) { #>
+	public class Label_<#= label #> (int i = 0) {
+		switch (i) {
+<# for (int i = 0; i < Count - 1; i++) { #>
+		
+		case <#= i #>:
+<# if (i == 2) { #>
+			//...
+			goto <#= i + 1 #>;
+<# } else { #>
+			//...
+			break;
+<# } #>
+<# } #>
+		case <#= Count - 1 #>:
+			// ..
+			break;
+		}
+	}
+
+<# } #>
+}

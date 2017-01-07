@@ -5,7 +5,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class VGPDialogueLine : Line, IWrappable {
+        class VGPDialogueLine : Line, IWrappable, ITranspilable {
 
             public string Label { get; private set; }
             public string Text { get; private set; }
@@ -25,6 +25,12 @@ namespace VGPrompter {
 
             public IScriptLine ToWrapper() {
                 return new DialogueLine(Text, Label);
+            }
+
+            public string[] Transpile() {
+                return new string[] {
+                    string.Format("yield return new DialogueLine({0}, {1});", Text, Label)
+                };
             }
 
         }

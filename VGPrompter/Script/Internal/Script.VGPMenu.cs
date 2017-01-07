@@ -7,7 +7,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class VGPMenu : PickableContainer<VGPChoice>, IWrappable {
+        class VGPMenu : PickableContainer<VGPChoice>, IWrappable, ITranspilable {
 
             public VGPMenu(VGPBlock parent) {
                 Parent = parent;
@@ -65,8 +65,10 @@ namespace VGPrompter {
 
             public override bool IsValid() { return true; }
 
-        }
+            public string[] Transpile() {
+                return new string[] { };
+            }
 
-    }
+        }
 
 }

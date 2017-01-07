@@ -144,6 +144,33 @@ namespace Tests {
             return (new Random()).Next(menu.Count - 1);
         }
 
+        //[TestMethod]
+        /*public void Transpiler() {
+            var fn = @"C:\_temp\vgpscript.cs";
+            var t = new ScriptTranspiler(string.Empty, fn);
+            t.GenerateCSharpCode(fn);
+        }*/
+
+        
+
+        [TestMethod]
+        public void T4Trans() {
+            var t = new TScriptTest();
+            var str = t.TransformText();
+            File.WriteAllText("c:\\users\\eugenius\\desktop\\renpy2cs.cs", str);
+        }
+
+    }
+
+    public partial class TScriptTest {
+        public List<string> Labels { get; private set; }
+
+        public int Count { get; private set; }
+
+        public TScriptTest() {
+            Labels = new List<string>() { "start", "ending" };
+            Count = 5;
+        }
     }
 
 }
