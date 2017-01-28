@@ -63,7 +63,7 @@ namespace VGPrompter {
                     if (x == null)
                         throw new Exception("Can't wrap this line!");
 
-                    w = x.ToWrapper();
+                    w = x.ToWrapper(Script);
 
                     if (w is Menu) {
 

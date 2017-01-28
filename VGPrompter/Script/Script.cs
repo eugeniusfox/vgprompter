@@ -22,9 +22,13 @@ namespace VGPrompter {
         Dictionary<string, Func<bool>> _conditions;
         [NonSerialized]
         Dictionary<string, Action> _actions;
+        [NonSerialized]
+        TextManager _text_manager;
 
         public Dictionary<string, Func<bool>> Conditions { get { return _conditions; } set { _conditions = value; } }
         public Dictionary<string, Action> Actions { get { return _actions; } set { _actions = value; } }
+        TextManager TextMng { get; }
+
 
         public bool RepeatLastLineOnRecover { get; set; }
         int CurrentIterableLineOffset { get { return RepeatLastLineOnRecover ? 1 : 0; } }
@@ -175,6 +179,12 @@ namespace VGPrompter {
             CurrentBlockID = 0;
             StartingLabel = DEFAULT_STARTING_LABEL;
             Blocks = new Dictionary<string, VGPBlock>();
+            _text_manager = new TextManager();
+        }
+
+        internal Script(TextManager tm)
+            : this() {
+            _text_manager = tm;
         }
 
         public Script(Dictionary<string, Func<bool>> conditions, Dictionary<string, Action> actions, string starting_label = DEFAULT_STARTING_LABEL)

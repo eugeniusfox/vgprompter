@@ -9,13 +9,16 @@ namespace VGPrompter {
         [Serializable]
         class VGPMenu : PickableContainer<VGPChoice>, IWrappable {
 
-            public VGPMenu(VGPBlock parent) {
+            public int? Duration { get; private set; }
+
+            public VGPMenu(VGPBlock parent, int? duration = null) {
                 Parent = parent;
+                Duration = duration;
                 InitializeContainer();
             }
 
-            public VGPMenu(List<VGPChoice> choices, VGPBlock parent)
-                : this(parent) {
+            public VGPMenu(List<VGPChoice> choices, VGPBlock parent, int? duration = null)
+                : this(parent, duration) {
                 Contents = choices ?? new List<VGPChoice>();
             }
 
@@ -43,7 +46,7 @@ namespace VGPrompter {
                     item.Prime();
             }
 
-            public IScriptLine ToWrapper() {
+            public IScriptLine ToWrapper(Script script = null) {
 
                 return new Menu(Contents
                     .Select((x, i) => x.ToWrapper(i))

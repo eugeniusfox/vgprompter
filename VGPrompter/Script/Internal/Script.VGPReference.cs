@@ -21,7 +21,7 @@ namespace VGPrompter {
                 return Action != null;
             }
 
-            public IScriptLine ToWrapper() {
+            public IScriptLine ToWrapper(Script script = null) {
                 return new Reference(Tag, Action);
             }
         }
