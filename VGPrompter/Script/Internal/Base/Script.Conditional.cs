@@ -15,17 +15,26 @@ namespace VGPrompter {
             public bool IsTrue { get { return Condition(); } }
 
             [Serializable]
-            public class If : Conditional {
+            public class If : Conditional, ICompiled<If> {
+                static readonly int StatementLength = 8;
                 public If(string label, VGPBlock parent = null) : base(label, parent) { }
+                public If FromBinary(byte[] bytes) {
+                    Convert.ToUInt16(bytes);
+                    // TODO
+                    var x = 8 << bytes[0];
+                    return new If("");
+                }
             }
 
             [Serializable]
             public class ElseIf : Conditional {
+                static readonly int StatementLength = 8;
                 public ElseIf(string label, VGPBlock parent = null) : base(label, parent) { }
             }
 
             [Serializable]
             public class Else : Conditional {
+                static readonly int StatementLength = 4;
                 public Else(VGPBlock parent = null) : base(TRUE, parent) { }
             }
 
