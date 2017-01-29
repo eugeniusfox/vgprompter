@@ -2,7 +2,7 @@ define xyz = "XYZXYZXYZ"
 
 label start:
 
-    "First anonymous line."
+    "First anonymous line [xyz]."
     char1 "Second line."
     char1 "Third line."
 

@@ -1,11 +1,14 @@
+define xyz = "XYZXYZXYZ"
+define abc = "ABCABCABC"
+
 label start:
 
-	"First anonymous line."
+	"First [abc] anonymous line [xyz]."
 	char1 "Second line."
 	char1 "Third line."
 
 	menu:
-		"First anonymous choice":
+		"First anonymous choice [xyz]":
 			char1 "First choice line."
 		tag "Second named choice":
 			char1 "Second choice line."

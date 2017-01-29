@@ -71,7 +71,7 @@
     <Compile Include="Script\Internal\Script.VGPReturn.cs" />
     <Compile Include="Script\Public\Base\Script.IScriptLineWrapper.cs" />
     <Compile Include="Script\Internal\Script.VGPWhile.cs" />
-    <Compile Include="Script\TextManager.cs" />
+    <Compile Include="Script\Script.TextManager.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -294,6 +294,10 @@ namespace VGPrompter {
             return Utils.GetBinary(this);
         }
 
+        public void SaveStrings(string path) {
+            _text_manager.ToCSV(path);
+        }
+
     }
 
 }

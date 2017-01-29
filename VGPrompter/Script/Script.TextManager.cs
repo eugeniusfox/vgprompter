@@ -81,9 +81,9 @@ namespace VGPrompter {
 
                 var sb = new StringBuilder();
 
-                /*foreach (var s in _global_strings) {
+                foreach (var s in _global_strings) {
                     sb.Append(string.Format(GLOBAL_FORMAT, s.Key, s.Value));
-                }*/
+                }
 
                 foreach (var label in _dialogue_strings) {
                     foreach (var s in label.Value) {

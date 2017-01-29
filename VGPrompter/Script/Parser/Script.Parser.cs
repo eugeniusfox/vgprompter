@@ -88,7 +88,7 @@ namespace VGPrompter {
             static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
             static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
 
-            public static Regex string_interpolation_re = new Regex(@"\[(\w*)\]$", RegexOptions.Compiled);
+            public static Regex string_interpolation_re = new Regex(@"(?<=\[)\w+(?=\])", RegexOptions.Compiled);
 
 
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -229,6 +229,9 @@ namespace VGPrompter {
                     } else if (stmt is VGPDefine) {
 
                         var tmp = stmt as VGPDefine;
+
+                        if (tm.IsGlobalTextDefined(tmp.Key)) throw new Exception(string.Format("String '{0}' already defined!", tmp.Key));
+
                         tm.AddGlobalText(tmp.Key, tmp.Value);
 
                     } else {
@@ -380,7 +383,6 @@ namespace VGPrompter {
                         var tmp = node2ILine(child, iline.GetType(), current_block, ref tm, ignore_unsupported_renpy);
                         if (tmp == null) throw new Exception("Null child ILine!");
 
-
                         if (tmp is Conditional) {
 
                             ifelse.AddCondition(tmp as Conditional);
@@ -431,13 +433,16 @@ namespace VGPrompter {
                 var m = choice_re.Match(line);
                 if (!m.Success) throw new Exception("Invalid Choice!");
 
-                var text = m.Groups[3].Value;
+                var tag = m.Groups[1].Value;
+                var text = m.Groups[2].Value;
+                var condition = m.Groups[3].Value;
+
                 var to_interpolate = IsToInterpolate(text, line, ref tm);
 
                 if (string.IsNullOrEmpty(m.Groups[1].Value)) {
-                    return new VGPChoice.VGPAnonymousChoice(m.Groups[2].Value, parent, to_interpolate, text);
+                    return new VGPChoice.VGPAnonymousChoice(text, parent, to_interpolate, condition);
                 } else {
-                    return new VGPChoice.VGPNamedChoice(m.Groups[1].Value, m.Groups[2].Value, parent, to_interpolate, text);
+                    return new VGPChoice.VGPNamedChoice(tag, text, parent, to_interpolate, condition);
                 }
             }
 
@@ -474,18 +479,20 @@ namespace VGPrompter {
             static bool IsToInterpolate(string text, string line, ref TextManager tm) {
 
                 string ikey;
-                var m = string_interpolation_re.Match(text);
-                var to_interpolate = m.Success;
+                var m = string_interpolation_re.Matches(text);
+                var to_interpolate = m.Count > 0;
 
                 if (to_interpolate) {
-                    foreach (Group g in m.Groups) {
+                    foreach (Group g in m) {
+
                         ikey = g.Value;
 
                         if (string.IsNullOrEmpty(ikey))
                             throw new Exception(string.Format("Empty variable name in dialogue line '{0}'!", line));
 
                         if (!tm.IsGlobalTextDefined(ikey))
-                            throw new Exception(string.Format("Undefined variable '{0}' in dialogue line '{1}'!", g.Value, line));
+                            throw new Exception(string.Format("Undefined variable '{0}' in dialogue line '{1}'!", ikey, line));
+
                     }
                 }
 
@@ -510,20 +517,27 @@ namespace VGPrompter {
             }
 
             internal static string InterpolateText(string text, ref TextManager tm) {
-                var m = string_interpolation_re.Match(text);
                 var out_text = text;
+                var m = string_interpolation_re.Matches(text);
+                var to_interpolate = m.Count > 0;
 
                 string ikey, itext;
 
-                if (m.Success) {
-                    foreach (Group g in m.Groups) {
+                if (to_interpolate) {
+                    foreach (Group g in m) {
+
                         ikey = g.Value;
 
                         if (tm.TryGetGlobalText(ikey, out itext)) {
+
                             out_text = out_text.Replace(string.Format("[{0}]", ikey), itext);
+
                         } else {
+
                             throw new Exception(string.Format("Undefined variable '{0}'!", g.Value));
+
                         }
+
                     }
                 }
 
