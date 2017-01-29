@@ -230,9 +230,9 @@ namespace VGPrompter {
 
                         var tmp = stmt as VGPDefine;
 
-                        if (tm.IsGlobalTextDefined(tmp.Key)) throw new Exception(string.Format("String '{0}' already defined!", tmp.Key));
+                        if (tm.Globals.ContainsKey(tmp.Key)) throw new Exception(string.Format("String '{0}' already defined!", tmp.Key));
 
-                        tm.AddGlobalText(tmp.Key, tmp.Value);
+                        tm.Globals[tmp.Key] = tmp.Value;
 
                     } else {
 
@@ -490,7 +490,7 @@ namespace VGPrompter {
                         if (string.IsNullOrEmpty(ikey))
                             throw new Exception(string.Format("Empty variable name in dialogue line '{0}'!", line));
 
-                        if (!tm.IsGlobalTextDefined(ikey))
+                        if (!tm.Globals.ContainsKey(ikey))
                             throw new Exception(string.Format("Undefined variable '{0}' in dialogue line '{1}'!", ikey, line));
 
                     }
@@ -528,7 +528,7 @@ namespace VGPrompter {
 
                         ikey = g.Value;
 
-                        if (tm.TryGetGlobalText(ikey, out itext)) {
+                        if (tm.Globals.TryGetValue(ikey, out itext)) {
 
                             out_text = out_text.Replace(string.Format("[{0}]", ikey), itext);
 

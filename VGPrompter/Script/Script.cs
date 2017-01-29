@@ -27,7 +27,7 @@ namespace VGPrompter {
 
         public Dictionary<string, Func<bool>> Conditions { get { return _conditions; } set { _conditions = value; } }
         public Dictionary<string, Action> Actions { get { return _actions; } set { _actions = value; } }
-        public Dictionary<string, Dictionary<string, string>> TextMng { get { return _text_manager._dialogue_strings; } }
+        public Dictionary<string, Dictionary<string, string>> Lines { get { return _text_manager.Lines; } }
 
         public bool RepeatLastLineOnRecover { get; set; }
         int CurrentIterableLineOffset { get { return RepeatLastLineOnRecover ? 1 : 0; } }

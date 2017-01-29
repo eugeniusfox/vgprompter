@@ -18,8 +18,11 @@ namespace VGPrompter {
 
             MD5 _md5;
 
-            internal Dictionary<string, Dictionary<string, string>> _dialogue_strings;
-            internal Dictionary<string, string> _global_strings;
+            Dictionary<string, Dictionary<string, string>> _dialogue_strings;
+            Dictionary<string, string> _global_strings;
+
+            internal Dictionary<string, string> Globals { get { return _global_strings; } }
+            internal Dictionary<string, Dictionary<string, string>> Lines { get { return _dialogue_strings; } }
 
             public string GetHash(string text) {
 
@@ -32,7 +35,6 @@ namespace VGPrompter {
 
                 return sb.ToString();
 
-                //return string.Join("", data.Select(x => x.ToString("x2")).ToArray());
             }
 
             public TextManager() {
@@ -53,28 +55,7 @@ namespace VGPrompter {
 
                 _dialogue_strings[label][hash] = text;
 
-                /*try {
-                    _dialogue_strings[label][hash] = text;
-                } catch (KeyNotFoundException ex) {
-                    throw new System.Exception(ex.Data.ToString());
-                }*/
                 return hash;
-            }
-
-            public string GetGlobalText(string key) {
-                return _global_strings[key];
-            }
-
-            public bool TryGetGlobalText(string key, out string text) {
-                return _global_strings.TryGetValue(key, out text);
-            }
-
-            public void AddGlobalText(string key, string text) {
-                _global_strings[key] = text;
-            }
-
-            public bool IsGlobalTextDefined(string key) {
-                return _global_strings.ContainsKey(key);
             }
 
             public void ToCSV(string path) {
