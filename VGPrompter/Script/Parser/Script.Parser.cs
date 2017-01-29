@@ -368,7 +368,7 @@ namespace VGPrompter {
                         current_block = iline as VGPBlock;
 
                     } else if (parent_type == typeof(VGPMenu)) {
-                        iline = GetChoiceNode(trimmed_line, current_block);
+                        iline = GetChoiceNode(trimmed_line, current_block, ref tm);
                     } else {
                         iline = tokens2Node(trimmed_line.Split(WHITESPACE), current_block);
                     }
@@ -427,13 +427,17 @@ namespace VGPrompter {
                 return k;
             }
 
-            static VGPChoice GetChoiceNode(string line, VGPBlock parent) {
+            static VGPChoice GetChoiceNode(string line, VGPBlock parent, ref TextManager tm) {
                 var m = choice_re.Match(line);
                 if (!m.Success) throw new Exception("Invalid Choice!");
+
+                var text = m.Groups[3].Value;
+                var to_interpolate = IsToInterpolate(text, line, ref tm);
+
                 if (string.IsNullOrEmpty(m.Groups[1].Value)) {
-                    return new VGPChoice.VGPAnonymousChoice(m.Groups[2].Value, parent, m.Groups[3].Value);
+                    return new VGPChoice.VGPAnonymousChoice(m.Groups[2].Value, parent, to_interpolate, text);
                 } else {
-                    return new VGPChoice.VGPNamedChoice(m.Groups[1].Value, m.Groups[2].Value, parent, m.Groups[3].Value);
+                    return new VGPChoice.VGPNamedChoice(m.Groups[1].Value, m.Groups[2].Value, parent, to_interpolate, text);
                 }
             }
 
@@ -467,6 +471,27 @@ namespace VGPrompter {
                 return result;
             }
 
+            static bool IsToInterpolate(string text, string line, ref TextManager tm) {
+
+                string ikey;
+                var m = string_interpolation_re.Match(text);
+                var to_interpolate = m.Success;
+
+                if (to_interpolate) {
+                    foreach (Group g in m.Groups) {
+                        ikey = g.Value;
+
+                        if (string.IsNullOrEmpty(ikey))
+                            throw new Exception(string.Format("Empty variable name in dialogue line '{0}'!", line));
+
+                        if (!tm.IsGlobalTextDefined(ikey))
+                            throw new Exception(string.Format("Undefined variable '{0}' in dialogue line '{1}'!", g.Value, line));
+                    }
+                }
+
+                return to_interpolate;
+            }
+
             static VGPDialogueLine GetLineLeaf(string line, string label, ref TextManager tm) {
                 var m = line_re.Match(line);
 
@@ -475,22 +500,34 @@ namespace VGPrompter {
                 var tag = m.Groups[1].Value;
                 var text = m.Groups[2].Value;
 
+                // String interpolation validation (string aliases must be defined)
+                var to_interpolate = IsToInterpolate(text, line, ref tm);
+
                 // Extract text and get its hash
                 var hash = tm.AddText(label, text);
 
-                // String interpolation validation (string aliases must be defined)
-                m = string_interpolation_re.Match(text);
+                return new VGPDialogueLine(label, hash, tag, to_interpolate);
+            }
+
+            internal static string InterpolateText(string text, ref TextManager tm) {
+                var m = string_interpolation_re.Match(text);
+                var out_text = text;
+
+                string ikey, itext;
+
                 if (m.Success) {
                     foreach (Group g in m.Groups) {
-                        if (string.IsNullOrEmpty(g.Value)) {
-                            throw new Exception(string.Format("Empty variable name in dialogue line '{0}'!", line));
-                        } else if (!tm.IsGlobalTextDefined(g.Value)) {
-                            throw new Exception(string.Format("Undefined variable '{0}' in dialogue line '{1}'!", g.Value, line));
+                        ikey = g.Value;
+
+                        if (tm.TryGetGlobalText(ikey, out itext)) {
+                            out_text = out_text.Replace(string.Format("[{0}]", ikey), itext);
+                        } else {
+                            throw new Exception(string.Format("Undefined variable '{0}'!", g.Value));
                         }
                     }
                 }
 
-                return new VGPDialogueLine(label, hash, tag);
+                return out_text;
             }
 
 

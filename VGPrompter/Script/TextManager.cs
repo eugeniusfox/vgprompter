@@ -65,6 +65,10 @@ namespace VGPrompter {
                 return _global_strings[key];
             }
 
+            public bool TryGetGlobalText(string key, out string text) {
+                return _global_strings.TryGetValue(key, out text);
+            }
+
             public void AddGlobalText(string key, string text) {
                 _global_strings[key] = text;
             }
@@ -77,9 +81,9 @@ namespace VGPrompter {
 
                 var sb = new StringBuilder();
 
-                foreach (var s in _global_strings) {
+                /*foreach (var s in _global_strings) {
                     sb.Append(string.Format(GLOBAL_FORMAT, s.Key, s.Value));
-                }
+                }*/
 
                 foreach (var label in _dialogue_strings) {
                     foreach (var s in label.Value) {

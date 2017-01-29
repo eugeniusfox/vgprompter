@@ -1,3 +1,5 @@
+define xyz = "XYZXYZXYZ"
+
 label start:
 
     "First anonymous line."
@@ -5,8 +7,8 @@ label start:
     char1 "Third line."
 
     menu:
-        "First anonymous choice":
-            char1 "First choice line."
+        "First anonymous choice [xyz]":
+            char1 "First choice line [xyz]."
         tag "Second named choice":
             char1 "Second choice line."
         "Third conditional anonymous choice" if False:

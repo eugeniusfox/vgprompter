@@ -95,7 +95,7 @@ namespace VGPrompter {
             public IEnumerator<IScriptLine> GetWrapperEnumerator() {
                 foreach (IWrappable x in this) {
                     if (x == null) throw new Exception("Can't wrap this line!");
-                    yield return x.ToWrapper();
+                    yield return x.ToWrapper(Script);
                 }
             }
 

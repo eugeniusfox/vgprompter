@@ -27,8 +27,6 @@ namespace VGPrompter {
 
         public Dictionary<string, Func<bool>> Conditions { get { return _conditions; } set { _conditions = value; } }
         public Dictionary<string, Action> Actions { get { return _actions; } set { _actions = value; } }
-        TextManager TextMng { get; }
-
 
         public bool RepeatLastLineOnRecover { get; set; }
         int CurrentIterableLineOffset { get { return RepeatLastLineOnRecover ? 1 : 0; } }
@@ -219,7 +217,7 @@ namespace VGPrompter {
 
             foreach (IWrappable x in Start) {
                 if (x == null) throw new Exception("Can't wrap this line!");
-                yield return x.ToWrapper();
+                yield return x.ToWrapper(this);
             }
         }
 

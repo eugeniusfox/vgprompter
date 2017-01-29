@@ -49,7 +49,7 @@ namespace VGPrompter {
             public IScriptLine ToWrapper(Script script = null) {
 
                 return new Menu(Contents
-                    .Select((x, i) => x.ToWrapper(i))
+                    .Select((x, i) => x.ToWrapper(script, i))
                     .ToList());
 
                 /*var choices = new List<ChoiceWrapper>();

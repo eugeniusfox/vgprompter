@@ -42,6 +42,7 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Script\Internal\Base\Script.ITextual.cs" />
     <Compile Include="Script\Internal\Base\Script.IWrappable.cs" />
     <Compile Include="Script\Internal\Script.VGPDefine.cs" />
     <Compile Include="Script\Public\Script.Reference.cs" />
