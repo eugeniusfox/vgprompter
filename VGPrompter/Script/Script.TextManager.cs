@@ -18,8 +18,8 @@ namespace VGPrompter {
 
             MD5 _md5;
 
-            Dictionary<string, Dictionary<string, string>> _dialogue_strings;
-            Dictionary<string, string> _global_strings;
+            internal Dictionary<string, Dictionary<string, string>> _dialogue_strings;
+            internal Dictionary<string, string> _global_strings;
 
             public string GetHash(string text) {
 
@@ -96,15 +96,24 @@ namespace VGPrompter {
 
             public void FromCSV(string path) {
 
+                _dialogue_strings.Clear();
+                _global_strings.Clear();
+
                 var tokens = new string[3];
                 foreach (var row in File.ReadAllLines(path)) {
 
                     tokens = row.Split(SEPARATOR, 3);
+                    var label = tokens[0];
+                    var hash = tokens[1];
+                    var text = tokens[2];
 
-                    if (tokens[0] == GLOBAL_FORMAT) {
-                        _global_strings.Add(tokens[1], tokens[2]);
+                    if (label == GLOBAL_TAG) {
+                        _global_strings.Add(hash, text);
                     } else {
-                        _dialogue_strings[tokens[0]][tokens[1]] = tokens[2];
+                        if (!_dialogue_strings.ContainsKey(label)) {
+                            _dialogue_strings[label] = new Dictionary<string, string>();
+                        }
+                        _dialogue_strings[label][hash] = text;
                     }
 
                 }
