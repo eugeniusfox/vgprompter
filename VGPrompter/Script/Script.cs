@@ -161,6 +161,12 @@ namespace VGPrompter {
             return Utils.FromBinary<Script>(bytes);
         }
 
+        public static Script FromFiles(string script_path, string strings_path) {
+            var script = FromBinary(script_path);
+            script.LoadStrings(strings_path);
+            return script;
+        }
+
         public static Script FromSource(
             string path,
             bool recursive = false,
@@ -300,7 +306,19 @@ namespace VGPrompter {
         }
 
         public void LoadStrings(string path) {
+            if (_text_manager == null)
+                _text_manager = new TextManager();
+
             _text_manager.FromCSV(path);
+        }
+
+        public void ToFile(string path) {
+            System.IO.File.WriteAllBytes(path, ToBinary());
+        }
+
+        public void ToFiles(string script_path, string strings_path) {
+            ToFile(script_path);
+            SaveStrings(strings_path);
         }
 
     }
