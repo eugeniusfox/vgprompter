@@ -37,7 +37,7 @@ namespace VGPrompter {
             }
 
             public new string ToString() {
-                return "MENU: " + string.Join(COMMA, Contents.Select(x => x.Text).ToArray());
+                return "MENU: " + string.Join(COMMA, Contents.Select(x => x.TextHash).ToArray());
             }
 
             public new void Prime() {

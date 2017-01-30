@@ -3,7 +3,6 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace VGPrompter {
 
@@ -88,7 +87,7 @@ namespace VGPrompter {
             static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
             static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
 
-            public static Regex string_interpolation_re = new Regex(@"(?<=\[)\w+(?=\])", RegexOptions.Compiled);
+            public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
 
 
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -118,6 +117,10 @@ namespace VGPrompter {
 
             static string UnquoteString(string value) {
                 return value[0] == '"' && value[value.Length - 1] == '"' ? value.Substring(1, value.Length - 2) : value;
+            }
+
+            internal static string CustomUnescapeString(string s) {
+                return s.Replace(@"\[", @"[");
             }
 
             public static Script ParseSource(string path, bool recursive = false, IndentChar indent = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
@@ -434,15 +437,17 @@ namespace VGPrompter {
                 if (!m.Success) throw new Exception("Invalid Choice!");
 
                 var tag = m.Groups[1].Value;
-                var text = m.Groups[2].Value;
+                var text = UnescapeTextString(m.Groups[2].Value);
                 var condition = m.Groups[3].Value;
 
                 var to_interpolate = IsToInterpolate(text, line, ref tm);
 
+                var hash = tm.AddText(parent.Label, text);
+
                 if (string.IsNullOrEmpty(m.Groups[1].Value)) {
-                    return new VGPChoice.VGPAnonymousChoice(text, parent, to_interpolate, condition);
+                    return new VGPChoice.VGPAnonymousChoice(hash, parent, to_interpolate, condition);
                 } else {
-                    return new VGPChoice.VGPNamedChoice(tag, text, parent, to_interpolate, condition);
+                    return new VGPChoice.VGPNamedChoice(tag, hash, parent, to_interpolate, condition);
                 }
             }
 
@@ -505,7 +510,7 @@ namespace VGPrompter {
                 if (!m.Success) throw new Exception(string.Format("Invalid Line '{0}'!", line));
 
                 var tag = m.Groups[1].Value;
-                var text = m.Groups[2].Value;
+                var text = UnescapeTextString(m.Groups[2].Value);
 
                 // String interpolation validation (string aliases must be defined)
                 var to_interpolate = IsToInterpolate(text, line, ref tm);
@@ -514,6 +519,12 @@ namespace VGPrompter {
                 var hash = tm.AddText(label, text);
 
                 return new VGPDialogueLine(label, hash, tag, to_interpolate);
+            }
+
+            static string UnescapeTextString(string s) {
+                return s
+                    .Replace(@"\\", @"\")
+                    .Replace(@"\""", @"""");
             }
 
             internal static string InterpolateText(string text, ref TextManager tm) {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -43,8 +44,45 @@ namespace VGPrompter {
                 _global_strings = new Dictionary<string, string>();
             }
 
-            public string GetText(string label, string hash) {
+            public string GetRawText(string label, string hash) {
                 return _dialogue_strings[label][hash];
+            }
+
+            public string GetText(string label, string hash, bool to_interpolate) {
+                var raw_text = GetRawText(label, hash);
+                var text = Parser.CustomUnescapeString(
+                    to_interpolate ?
+                        InterpolateText(raw_text) :
+                        raw_text);
+                return text;
+            }
+
+            string InterpolateText(string text) {
+                var out_text = text;
+                var m = Parser.string_interpolation_re.Matches(text);
+                var to_interpolate = m.Count > 0;
+
+                string ikey, itext;
+
+                if (to_interpolate) {
+                    foreach (System.Text.RegularExpressions.Group g in m) {
+
+                        ikey = g.Value;
+
+                        if (_global_strings.TryGetValue(ikey, out itext)) {
+
+                            out_text = out_text.Replace(string.Format("[{0}]", ikey), itext);
+
+                        } else {
+
+                            throw new Exception(string.Format("Undefined variable '{0}'!", g.Value));
+
+                        }
+
+                    }
+                }
+
+                return out_text;
             }
 
             public string AddText(string label, string text) {

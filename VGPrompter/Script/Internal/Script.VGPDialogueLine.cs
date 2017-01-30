@@ -29,12 +29,8 @@ namespace VGPrompter {
             }
 
             public IScriptLine ToWrapper(Script script) {
-                var text = script._text_manager.GetText(ParentLabel, TextHash);
-                if (ToInterpolate) {
-                    return new DialogueLine(Parser.InterpolateText(text, ref script._text_manager), Tag);
-                } else {
-                    return new DialogueLine(text, Tag);
-                }
+                var text = script._text_manager.GetText(ParentLabel, TextHash, ToInterpolate);
+                return new DialogueLine(text, Tag);
             }
 
         }
