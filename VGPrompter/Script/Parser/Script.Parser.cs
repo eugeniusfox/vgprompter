@@ -90,6 +90,7 @@ namespace VGPrompter {
 
             //public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[).+(?=\])", RegexOptions.Compiled);
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
+            public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -515,6 +516,9 @@ namespace VGPrompter {
             internal static bool IsToInterpolate(string text, string line, ref TextManager tm) {
 
                 string ikey;
+
+                if (nested_interpolation_re.Match(text).Success) throw new Exception(string.Format("Nested interpolation in line '{0}'!", line));
+
                 var m = string_interpolation_re.Matches(text);
                 var to_interpolate = m.Count > 0;
 
