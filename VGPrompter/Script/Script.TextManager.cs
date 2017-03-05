@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 
 namespace VGPrompter {
 
@@ -79,14 +80,23 @@ namespace VGPrompter {
                 }
             }
 
+            bool IsToInterpolate(string text) {
+                return Parser.string_interpolation_re.Matches(text).Count > 0;
+            }
+
             string InterpolateText(string text) {
                 var out_text = text;
+
                 var m = Parser.string_interpolation_re.Matches(text);
                 var to_interpolate = m.Count > 0;
 
                 string ikey, itext;
 
                 if (to_interpolate) {
+
+                    //var groups = m.Cast<System.Text.RegularExpressions.Group>().Reverse();
+                    //foreach (var g in groups) {
+
                     foreach (System.Text.RegularExpressions.Group g in m) {
 
                         ikey = g.Value;
@@ -96,7 +106,7 @@ namespace VGPrompter {
                             /* The following check is necessary because in the final script
                              * there is no VGPDefine object to carry the to_interpolate information */
 
-                            if (Parser.string_interpolation_re.Match(itext).Success) {
+                            if (IsToInterpolate(text)) {
                                 itext = InterpolateText(itext);
                             }
 

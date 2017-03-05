@@ -88,6 +88,7 @@ namespace VGPrompter {
             static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
             static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
 
+            //public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[).+(?=\])", RegexOptions.Compiled);
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
@@ -511,7 +512,7 @@ namespace VGPrompter {
                 return result;
             }
 
-            static bool IsToInterpolate(string text, string line, ref TextManager tm) {
+            internal static bool IsToInterpolate(string text, string line, ref TextManager tm) {
 
                 string ikey;
                 var m = string_interpolation_re.Matches(text);
