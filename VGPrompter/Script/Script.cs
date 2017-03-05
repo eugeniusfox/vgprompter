@@ -24,6 +24,8 @@ namespace VGPrompter {
         Dictionary<string, Action> _actions;
         [NonSerialized]
         TextManager _text_manager;
+        [NonSerialized]
+        bool _is_primed = false;
 
         public Dictionary<string, Func<bool>> Conditions { get { return _conditions; } set { _conditions = value; } }
         public Dictionary<string, Action> Actions { get { return _actions; } set { _actions = value; } }
@@ -40,7 +42,10 @@ namespace VGPrompter {
         int CurrentIterableLine { get; set; }
         //bool IsPaused { get { return CurrentIterable != null; } }
 
-        public bool IsPrimed { get; private set; }
+        public bool IsPrimed {
+            get { return _is_primed; }
+            private set { _is_primed = value; }
+        }
         public int NumberOfMenus { get; private set; }
         public int CurrentBlockID;
         public bool HasReturned { get; private set; }
@@ -53,6 +58,8 @@ namespace VGPrompter {
             Func<Menu, IEnumerator> OnMenu,
             Func<IEnumerator> OnReturn = null,
             Func<Reference, IEnumerator> OnReference = null) {
+
+            if (!IsPrimed) throw new Exception("Can't iterate if the script is not primed!");
 
             return container.GetEnumerator(OnLine, OnMenu, OnReturn, OnReference);
         }
@@ -94,6 +101,8 @@ namespace VGPrompter {
             Func<Menu, Choice, IEnumerator> OnChoiceSelected,
             Func<IEnumerator> OnReturn = null,
             Func<Reference, IEnumerator> OnReference = null) {
+
+            if (!IsPrimed) throw new Exception("Can't iterate if the script is not primed!");
 
             return container.GetEnumerator(OnLine, SelectChoice, OnChoiceSelected, OnReturn, OnReference);
         }
