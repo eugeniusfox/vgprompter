@@ -79,6 +79,7 @@ namespace VGPrompter {
             };
 
             static Regex line_re = new Regex(@"^(?:(\w+) )?""(.+)""$", RegexOptions.Compiled);
+            static Regex define_re = new Regex(@"^define\s+(\w+)\s+=\s+(?:""(.*)""|(\d+(?:\.\d+)?))\s*$", RegexOptions.Compiled);
             static Regex choice_re = new Regex(@"^(?:(\w+) )?""(.+)""(?: if (\w+))?$", RegexOptions.Compiled);
 
             static Regex unsupported_renpy_re = new Regex(string.Format(@"^({0}) \w+", string.Join(PIPE, UNSUPPORTED_RENPY_KEYWORDS)), RegexOptions.Compiled);
@@ -89,11 +90,11 @@ namespace VGPrompter {
 
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
 
-
+            // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
                 new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
                                               (tokens)         => tokens[1][tokens[1].Length - 1] == COLON),
-                new ParserRule( DEFINE,       (tokens, parent) => new VGPDefine(tokens[1], UnquoteString(tokens[3])), 4,
+                new ParserRule( DEFINE,       (tokens, parent) => new VGPDefine(tokens[1], UnescapeTextString(UnquoteString(tokens[3])), false), 4,
                                               (tokens)         => tokens[2] == EQUAL && define_value_re.IsMatch(tokens[3]))
             };
 
@@ -195,7 +196,6 @@ namespace VGPrompter {
 
                 // 3. Get label blocks
                 var line = string.Empty;
-                var n = 0;
 
                 var labels = new List<string>();
 
@@ -220,7 +220,35 @@ namespace VGPrompter {
 
                     //var label_tokens = line.Substring(0, n - 1).Split(WHITESPACE);
 
-                    var stmt = tokens2TopLevel(line.Split(WHITESPACE));
+                    if (line.StartsWith(DEFINE)) {
+
+                        var definition = GetDefinition(line, ref tm);
+
+                        if (definition == null) throw new Exception(string.Format("Invalid definition '{0}'!", line));
+
+                        if (!tm.TryAddDefinition(definition.Key, definition.Value)) {
+                            throw new Exception(string.Format("String '{0}' already defined!", definition.Key));
+                        }
+
+                    } else if (line.StartsWith(LABEL)) {
+
+                        var block = tokens2TopLevel(line.Split(WHITESPACE)) as VGPBlock;
+
+                        if (block == null) throw new Exception(string.Format("Invalid label '{0}'!", line));
+
+                        labels.Add(block.Label);
+                        label_lines_indices_tmp.Add(i);
+
+                    } else {
+
+                        throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
+
+                    }
+
+                    /*
+                    var tokens = line.Contains(QUOTE) ? { } : line.Split(WHITESPACE);
+
+                    var stmt = tokens2TopLevel(tokens);
 
                     if (stmt == null) throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
 
@@ -235,6 +263,8 @@ namespace VGPrompter {
 
                         if (tm.Globals.ContainsKey(tmp.Key)) throw new Exception(string.Format("String '{0}' already defined!", tmp.Key));
 
+                        tmp.ToInterpolate = IsToInterpolate(tmp.Value, line, ref tm);
+
                         tm.Globals[tmp.Key] = tmp.Value;
 
                     } else {
@@ -242,7 +272,7 @@ namespace VGPrompter {
                         throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
 
                     }
-
+                    */
 
                     /*if (label_tokens.Length != 2 || label_tokens[0] != LABEL || string.IsNullOrEmpty(label_tokens[1]))
                         throw new Exception("Top-level statement is not a valid statement!");
@@ -521,6 +551,23 @@ namespace VGPrompter {
                 return new VGPDialogueLine(label, hash, tag, to_interpolate);
             }
 
+            static VGPDefine GetDefinition(string line, ref TextManager tm) {
+
+                var m = define_re.Match(line);
+
+                if (!m.Success) throw new Exception(string.Format("Invalid definition '{0}'!", line));
+
+                var tag = m.Groups[1].Value;
+                var text = UnescapeTextString(m.Groups[2].Value);
+
+                // String interpolation validation (string aliases must be defined)
+                var to_interpolate = IsToInterpolate(text, line, ref tm);
+
+                return new VGPDefine(tag, text, to_interpolate);
+                // Tokenize ignoring spaces between double quotes
+                // Run tokens through existing delegate (excise it from the list?)
+            }
+
             static string UnescapeTextString(string s) {
                 return s
                     .Replace(@"\\", @"\")
@@ -573,7 +620,7 @@ namespace VGPrompter {
                 }
 
                 Utils.LogArray("Invalid line", tokens, Logger);
-                throw new Exception("Invalid line!");
+                throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
 
             }
 

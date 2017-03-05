@@ -58,7 +58,7 @@ namespace VGPrompter {
 
             public abstract Choice ToWrapper(Script script, int index);
 
-            string GetInterpolatedText(Script script) {
+            public string GetInterpolatedText(Script script) {
                 return script._text_manager.GetText(Parent.Label, TextHash, ToInterpolate);
             }
 

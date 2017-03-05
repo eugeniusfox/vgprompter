@@ -48,13 +48,35 @@ namespace VGPrompter {
                 return _dialogue_strings[label][hash];
             }
 
-            public string GetText(string label, string hash, bool to_interpolate) {
-                var raw_text = GetRawText(label, hash);
+            public string GetRawGlobalText(string alias) {
+                return _global_strings[alias];
+            }
+
+            string GetAnyText(string raw_text, bool to_interpolate) {
                 var text = Parser.CustomUnescapeString(
                     to_interpolate ?
                         InterpolateText(raw_text) :
                         raw_text);
                 return text;
+            }
+
+            public string GetText(string label, string hash, bool to_interpolate) {
+                var raw_text = GetRawText(label, hash);
+                return GetAnyText(raw_text, to_interpolate);
+            }
+
+            public string GetGlobalText(string alias, bool to_interpolate) {
+                var raw_text = GetRawGlobalText(alias);
+                return GetAnyText(raw_text, to_interpolate);
+            }
+
+            public bool TryAddDefinition(string key, string value) {
+                if (Globals.ContainsKey(key)) {
+                    return false;
+                } else {
+                    Globals[key] = value;
+                    return true;
+                }
             }
 
             string InterpolateText(string text) {
@@ -70,6 +92,13 @@ namespace VGPrompter {
                         ikey = g.Value;
 
                         if (_global_strings.TryGetValue(ikey, out itext)) {
+
+                            /* The following check is necessary because in the final script
+                             * there is no VGPDefine object to carry the to_interpolate information */
+
+                            if (Parser.string_interpolation_re.Match(itext).Success) {
+                                itext = InterpolateText(itext);
+                            }
 
                             out_text = out_text.Replace(string.Format("[{0}]", ikey), itext);
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 
 namespace VGPrompter {
 
@@ -29,8 +28,13 @@ namespace VGPrompter {
             }
 
             public IScriptLine ToWrapper(Script script) {
-                var text = script._text_manager.GetText(ParentLabel, TextHash, ToInterpolate);
+                //var text = script._text_manager.GetText(ParentLabel, TextHash, ToInterpolate);
+                var text = GetInterpolatedText(script);
                 return new DialogueLine(text, Tag);
+            }
+
+            public string GetInterpolatedText(Script script) {
+                return script._text_manager.GetText(ParentLabel, TextHash, ToInterpolate);
             }
 
         }

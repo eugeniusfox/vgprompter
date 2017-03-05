@@ -4,6 +4,7 @@
 
         interface ITextual {
             bool ToInterpolate { get; }
+            string GetInterpolatedText(Script script);
         }
 
     }
