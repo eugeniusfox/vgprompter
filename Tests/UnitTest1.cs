@@ -51,7 +51,7 @@ namespace Tests {
         }
 
         [TestMethod]
-        public void TestScripEnumerator() {
+        public void TestScriptEnumerator() {
             var script = LoadScript(GetResourcePath(TEST_SCRIPT_1_TAB));
             script.Prime();
             script.Validate();
@@ -63,7 +63,7 @@ namespace Tests {
         }
 
         [TestMethod]
-        public void TestScripEnumeratorWhile() {
+        public void TestScriptEnumeratorWhile() {
             var script = LoadScript(GetResourcePath(TEST_SCRIPT_1_TAB));
             script.Prime();
             script.Validate();

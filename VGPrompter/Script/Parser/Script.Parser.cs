@@ -92,6 +92,8 @@ namespace VGPrompter {
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
             public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
 
+            static Regex inline_comment_re = new Regex(@"(.*"".*""|.*)\s+#.*$", RegexOptions.Compiled);
+
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
                 new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
@@ -131,11 +133,11 @@ namespace VGPrompter {
                 return ParseLines(lines, indent, ignore_unsupported_renpy);
             }
 
-            static string[] LoadRawLines(string path, bool recursive = false, bool ignore_unsupported_renpy = false) {
+            static RawLine[] LoadRawLines(string path, bool recursive = false, bool ignore_unsupported_renpy = false) {
 
                 if (Directory.Exists(path)) {
 
-                    var lines = new List<string>();
+                    var lines = new List<RawLine>();
                     var files = Utils.GetScriptFiles(path, recursive);
                     foreach (var f in files)
                         lines.AddRange(ReadLines(f, ignore_unsupported_renpy));
@@ -161,11 +163,13 @@ namespace VGPrompter {
                 throw new Exception("No indentation found!");
             }
 
-            static Script ParseLines(string[] lines, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
+            static Script ParseLines(RawLine[] lines, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
+
+                var lines_text = lines.Select(x => x.Text).ToArray();
 
                 char indent;
                 if (indent_enum == IndentChar.Auto) {
-                    indent = InferIndent(lines);
+                    indent = InferIndent(lines_text);
                 } else if (indent_enum == IndentChar.Tab) {
                     indent = TAB;
                 } else if (indent_enum == IndentChar.Whitespace) {
@@ -174,7 +178,7 @@ namespace VGPrompter {
                     throw new Exception("Invalid indent character!");
                 }
 
-                var depths = GetLineDepths(lines, indent);
+                var depths = GetLineDepths(lines_text, indent);
 
                 var indent_values = depths.Distinct().OrderBy(x => x).ToArray();
 
@@ -185,7 +189,9 @@ namespace VGPrompter {
                 var min_indent = 1;
 
                 if (indent == WHITESPACE) {
-                    min_indent = indent_values[0] == 0 ? indent_values[1] : indent_values[0];
+                    min_indent = indent_values.FirstOrDefault(x => x > 0);  // indent_values[0] == 0 ? indent_values[1] : indent_values[0];
+
+                    if (min_indent < 1) min_indent = 1;
 
                     // 2. Are all indents multiples of the indentation unit?
                     if (indent_values.Any(x => x % min_indent != 0)) throw new Exception("Irregular indentation!");
@@ -193,7 +199,13 @@ namespace VGPrompter {
 
                 var diffs = Diff(depths);
 
-                if (diffs.Any(x => x > min_indent)) throw new Exception("Unexpected indentation!");
+                for (int i = 0; i < lines.Length - 1; i++) {
+                    if (diffs[i] > min_indent) {
+                        throw new Exception(string.Format("Unexpected indentation at line '{0}'!", lines[i]));
+                    }
+                }
+
+                //if (diffs.Any(x => x > min_indent)) throw new Exception("Unexpected indentation!");
 
 
                 // 3. Get label blocks
@@ -209,7 +221,7 @@ namespace VGPrompter {
 
                 foreach (var i in top_lines_indices) {
 
-                    line = lines[i].Trim();
+                    line = lines[i].Text.Trim();
                     //n = line.Length;
 
                     /*if (line[n - 1] != COLON)
@@ -247,40 +259,6 @@ namespace VGPrompter {
 
                     }
 
-                    /*
-                    var tokens = line.Contains(QUOTE) ? { } : line.Split(WHITESPACE);
-
-                    var stmt = tokens2TopLevel(tokens);
-
-                    if (stmt == null) throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
-
-                    if (stmt is VGPBlock) {
-
-                        labels.Add((stmt as VGPBlock).Label);
-                        label_lines_indices_tmp.Add(i);
-
-                    } else if (stmt is VGPDefine) {
-
-                        var tmp = stmt as VGPDefine;
-
-                        if (tm.Globals.ContainsKey(tmp.Key)) throw new Exception(string.Format("String '{0}' already defined!", tmp.Key));
-
-                        tmp.ToInterpolate = IsToInterpolate(tmp.Value, line, ref tm);
-
-                        tm.Globals[tmp.Key] = tmp.Value;
-
-                    } else {
-
-                        throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
-
-                    }
-                    */
-
-                    /*if (label_tokens.Length != 2 || label_tokens[0] != LABEL || string.IsNullOrEmpty(label_tokens[1]))
-                        throw new Exception("Top-level statement is not a valid statement!");
-
-                    label_lines_indices_tmp.Add(i);
-                    labels.Add(label_tokens[1]);*/
                 }
 
                 if (labels.GroupBy(x => x).Any(g => g.Count() > 1))
@@ -315,9 +293,9 @@ namespace VGPrompter {
                 return script;
             }
 
-            static Node renpy2tree(string[] lines, int[] label_lines_indices, char indent, bool print = false) {
+            static Node renpy2tree(RawLine[] lines, int[] label_lines_indices, char indent, bool print = false) {
                 int nidx = 0;
-                var root_node = new Node(SCRIPT, indent) { Level = -1 };
+                var root_node = Node.Root;
 
                 Node label_node = null;
                 foreach (var label_index in label_lines_indices) {
@@ -366,6 +344,8 @@ namespace VGPrompter {
                     } else {
 
                         tokens = line.Split(WHITESPACE);
+
+                        //Console.WriteLine(string.Format(">>> {0}", string.Join(", ", tokens)));
 
                         if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE)))
                             throw new Exception(string.Format("Invalid characters in functional line '{0}'!", line));
@@ -483,7 +463,7 @@ namespace VGPrompter {
                 }
             }
 
-            static void ParseContents(string[] lines, Node parent, char indent, ref int i) {
+            static void ParseContents(RawLine[] lines, Node parent, char indent, ref int i) {
                 Node node;
                 while (++i < lines.Length) {
                     node = new Node(lines[i], indent);
@@ -644,11 +624,41 @@ namespace VGPrompter {
 
             /* Load and pre-filter rows */
 
-            static IEnumerable<string> ReadLines(string path, bool ignore_unsupported_renpy = false) {
+            struct RawLine {
+                public string Source { get; private set; }
+                public string Text { get; private set; }
+                public int Index { get; private set; }
+
+                public RawLine(string source, string text, int index) : this() {
+                    Source = source;
+                    Text = text;
+                    Index = index;
+                }
+
+                public RawLine Trim() {
+                    return new RawLine(Source, Text.Trim(), Index);
+                }
+            }
+
+            static IEnumerable<RawLine> ReadLines(string path, bool ignore_unsupported_renpy = false) {
                 return
                     File.ReadAllLines(path)
+                        .Select(y => {
+                            // Handle in-line comments
+                            if (y.Contains('#')) {
+                                if (y.Contains('"')) {
+                                    var comment_re = new Regex(@"(?:(?:"".*? "").*?)(\#.*?)$", RegexOptions.Compiled);
+                                    return comment_re.Replace(y, string.Empty).TrimEnd();
+                                } else {
+                                    var r = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
+                                    return r.Replace(y, string.Empty).TrimEnd();
+                                }
+                            } else {
+                                return y;
+                            }
+                        }).Select((x, i) => new RawLine(path, x, i))
                         .Where(x => {
-                            var y = x.Trim();
+                            var y = x.Text.Trim();
                             var res = !string.IsNullOrEmpty(y) && y[0] != COMMENT_CHAR;
                             if (res && ignore_unsupported_renpy) {
                                 res = !(y[0] == RENPY_PYLINE_CHAR || unsupported_renpy_re.Match(y).Success);

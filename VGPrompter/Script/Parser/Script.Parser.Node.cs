@@ -19,24 +19,38 @@ namespace VGPrompter {
                     }
                 }
 
+                RawLine _line;
+
                 public int Level { get; set; }
-                public string Label { get; set; }
+
+                public string Label { get { return _line.Text; } }
+                public int Index { get { return _line.Index; } }
+                public string Source { get { return _line.Source; } }
+
                 public List<Node> Children { get; set; }
 
                 public Node LastChild { get { return Children.LastOrDefault(); } }
                 public bool IsEmpty { get { return Children.Count == 0; } }
 
-                public Node(char indent) {
-                    if (IndentSpan == null) throw new Exception("Indentation span not set!");
-                    Children = new List<Node>();
+                public static Node Root {
+                    get { return new Node(); }
                 }
 
-                public Node(string label, char indent, List<Node> children = null)
-                    : this(indent) {
-                    Label = label.Trim();
-                    Level = GetIndent(label, indent) / _indent;
-                    if (children != null)
-                        Children = children;
+                Node() {
+                    _line = new RawLine();
+                    Children = new List<Node>();
+                    Level = -1;
+                }
+
+                public Node(RawLine line, char indent, List<Node> children = null) {
+
+                    if (IndentSpan == null) throw new Exception("Indentation span not set!");
+
+                    Level = GetIndent(line.Text, indent) / _indent;
+                    Children = children ?? new List<Node>();
+
+                    _line = line.Trim();
+
                 }
 
                 public void Add(Node x) {
