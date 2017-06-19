@@ -97,6 +97,8 @@ namespace VGPrompter {
             static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
             static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
+            static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\((\w+(?:,\w+)*)\))?$", RegexOptions.Compiled);
+
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
                 new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
@@ -109,8 +111,9 @@ namespace VGPrompter {
                 new ParserRule( PASS,         (tokens, parent) => new VGPPass(), 1),
                 new ParserRule( RETURN,       (tokens, parent) => new VGPReturn(), 1),
                 new ParserRule( JUMP,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: false), 2),
-                new ParserRule( CALL,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: true), 2),
-                new ParserRule( string.Empty, (tokens, parent) => new VGPReference(tokens[0]), 1)
+                new ParserRule( CALL,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: true), 2)
+                /*new ParserRule( string.Empty, (tokens, parent) => new VGPReference(tokens[0], argv: tokens.Length > 1 ? tokens.Skip(1).ToArray() : null), null,
+                                              (tokens)         => true)*/
             };
 
             static ParserRule[] NodeRules = new ParserRule[] {
@@ -352,8 +355,8 @@ namespace VGPrompter {
 
                         //Console.WriteLine(string.Format(">>> {0}", string.Join(", ", tokens)));
 
-                        if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE)))
-                            throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
+                        //if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE || x == '(' || x == ')' || x == ',')))
+                            //throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
 
                         iline = tokens2Leaf(tokens);
                     }
@@ -595,7 +598,22 @@ namespace VGPrompter {
 
             /* From tokens to Line objects */
 
-            static Line tokens2Line(ParserRule[] rules, string[] tokens, VGPBlock parent = null) {
+            static VGPReference GetFunctionCall(string[] tokens) {
+                var s = string.Join(string.Empty, tokens);
+                var m = function_call_re.Match(s);
+                if (!m.Success) return null;
+
+                if (m.Groups[2].Value == string.Empty) {
+                    // Action
+                    return new VGPReference(s);
+                } else {
+                    // Func
+                    var argv = m.Groups[2].Value.Split(new char[] { ',' }).Select(x => x.Trim()).ToArray();
+                    return new VGPReference(m.Groups[1].Value, argv);
+                }
+            }
+
+            static Line tokens2Line(ParserRule[] rules, string[] tokens, VGPBlock parent = null, Func<string[], Line> fallback = null) {
 
                 var first_token = tokens[0];
 
@@ -609,6 +627,9 @@ namespace VGPrompter {
                     }
                 }
 
+                var line = fallback?.Invoke(tokens);
+                if (line != null) return line;
+
                 Utils.LogArray("Invalid line", tokens, Logger);
                 throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
 
@@ -619,7 +640,7 @@ namespace VGPrompter {
             }
 
             static Line tokens2Leaf(string[] tokens) {
-                return tokens2Line(LeafRules, tokens);
+                return tokens2Line(LeafRules, tokens, fallback: GetFunctionCall);
             }
 
             static Line tokens2Node(string[] tokens, VGPBlock parent) {
