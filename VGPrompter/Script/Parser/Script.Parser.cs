@@ -93,6 +93,9 @@ namespace VGPrompter {
             public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
 
             static Regex inline_comment_re = new Regex(@"(.*"".*""|.*)\s+#.*$", RegexOptions.Compiled);
+            //static Regex comment_quotes_re = new Regex(@"(?:(?:"".*?"").*?)(\#.*?)$", RegexOptions.Compiled);
+            static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
+            static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -644,18 +647,19 @@ namespace VGPrompter {
                 return
                     File.ReadAllLines(path)
                         .Select(y => {
+                            var line = y;
+                            
                             // Handle in-line comments
                             if (y.Contains('#')) {
                                 if (y.Contains('"')) {
-                                    var comment_re = new Regex(@"(?:(?:"".*? "").*?)(\#.*?)$", RegexOptions.Compiled);
-                                    return comment_re.Replace(y, string.Empty).TrimEnd();
+                                    line = comment_quotes_re.Replace(y, string.Empty);
                                 } else {
-                                    var r = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
-                                    return r.Replace(y, string.Empty).TrimEnd();
+                                    line = comment_no_quotes_re.Replace(y, string.Empty);
                                 }
-                            } else {
-                                return y;
+                                Console.WriteLine(line);
                             }
+
+                            return line.TrimEnd();
                         }).Select((x, i) => new RawLine(path, x, i))
                         .Where(x => {
                             var y = x.Text.Trim();

@@ -15,6 +15,7 @@ namespace Tests {
 
         public static readonly string TEST_SCRIPT_1 = "insc_test1.rpy";
         public static readonly string TEST_SCRIPT_1_TAB = "insc_test1_tab.rpy";
+        public static readonly string DEMO = "demo.rpy";
 
         public Script LoadScript(string fp, Script.Parser.IndentChar indent = Script.Parser.IndentChar.Auto) {
 
@@ -40,7 +41,6 @@ namespace Tests {
 
         }
 
-
         [TestMethod]
         public void TestScriptPriming() {
 
@@ -60,6 +60,27 @@ namespace Tests {
                     script.CurrentChoiceIndex = (uint)SelectChoice(x as Script.Menu);
                 Console.WriteLine(x.ToString());
             }
+        }
+
+        [TestMethod]
+        public void TestDemoScriptEnumerator() {
+            var script = LoadScript(GetResourcePath(DEMO));
+            var conditions = new Dictionary<string, Func<bool>>() {
+                { "True", () => true },
+                { "False", () => false },
+                { "CurrentColorNotGreen", () => false }
+            };
+
+            var actions = new Dictionary<string, Action>() {
+                { "DoNothing", () => { } },
+                { "TurnCubeGreen", () => { } },
+                { "TurnCubeBlue", () => { } }
+            };
+
+            script.SetDelegates(conditions, actions);
+
+            script.Prime();
+            script.Validate();
         }
 
         [TestMethod]

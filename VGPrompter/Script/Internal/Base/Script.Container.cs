@@ -35,6 +35,7 @@ namespace VGPrompter {
             public virtual void Prime() {
                 if (Contents == null)
                     Script.Logger.Log("Null contents!");
+
                 foreach (var item in Contents) {
                     if (item is VGPReference) {
                         var reference = item as VGPReference;

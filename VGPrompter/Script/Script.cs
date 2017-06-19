@@ -213,10 +213,22 @@ namespace VGPrompter {
 
         public void Prime() {
             NumberOfMenus = 0;
+            var success = true;
             foreach (var block in Blocks.Values) {
-                block.Prime();
+                try {
+                    block.Prime();
+                } catch (KeyNotFoundException ex) {
+                    Logger.Log(ex.Message);
+                    success = false;
+                    break;
+                }
             }
-            IsPrimed = true;
+            IsPrimed = success;
+        }
+
+        public bool TryPrime() {
+            Prime();
+            return IsPrimed;
         }
 
         public void SetDelegates(Dictionary<string, Func<bool>> conditions, Dictionary<string, Action> actions) {
