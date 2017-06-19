@@ -23,9 +23,13 @@ namespace VGPrompter {
 
                 public int Level { get; set; }
 
-                public string Label { get { return _line.Text; } }
-                public int Index { get { return _line.Index; } }
-                public string Source { get { return _line.Source; } }
+                public string Label => _line.Text;
+
+                public RawLine Line => _line;
+
+                //public int Index => _line.Index;
+                //public string Source => _line.Source;
+                //public string ExceptionString => _line.ExceptionString;
 
                 public List<Node> Children { get; set; }
 

@@ -204,7 +204,7 @@ namespace VGPrompter {
 
                 for (int i = 0; i < lines.Length - 1; i++) {
                     if (diffs[i] > min_indent) {
-                        throw new Exception(string.Format("Unexpected indentation at line '{0}'!", lines[i]));
+                        throw new Exception(string.Format("Unexpected indentation in {0}!", lines[i].ExceptionString));
                     }
                 }
 
@@ -224,7 +224,9 @@ namespace VGPrompter {
 
                 foreach (var i in top_lines_indices) {
 
-                    line = lines[i].Text.Trim();
+                    var raw_line = lines[i];
+
+                    line = raw_line.Text.Trim();
                     //n = line.Length;
 
                     /*if (line[n - 1] != COLON)
@@ -241,24 +243,24 @@ namespace VGPrompter {
 
                         var definition = GetDefinition(line, ref tm);
 
-                        if (definition == null) throw new Exception(string.Format("Invalid definition '{0}'!", line));
+                        if (definition == null) throw new Exception(string.Format("Invalid definition in {0}!", raw_line.ExceptionString));
 
                         if (!tm.TryAddDefinition(definition.Key, definition.Value)) {
-                            throw new Exception(string.Format("String '{0}' already defined!", definition.Key));
+                            throw new Exception(string.Format("Variable '{0}' already initialized in {1}!", definition.Key, raw_line.ExceptionString));
                         }
 
                     } else if (line.StartsWith(LABEL)) {
 
                         var block = tokens2TopLevel(line.Split(WHITESPACE)) as VGPBlock;
 
-                        if (block == null) throw new Exception(string.Format("Invalid label '{0}'!", line));
+                        if (block == null) throw new Exception(string.Format("Invalid label in {0}!", raw_line.ExceptionString));
 
                         labels.Add(block.Label);
                         label_lines_indices_tmp.Add(i);
 
                     } else {
 
-                        throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
+                        throw new Exception(string.Format("Invalid top-level statement in {0}!", raw_line.ExceptionString));
 
                     }
 
@@ -351,12 +353,12 @@ namespace VGPrompter {
                         //Console.WriteLine(string.Format(">>> {0}", string.Join(", ", tokens)));
 
                         if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE)))
-                            throw new Exception(string.Format("Invalid characters in functional line '{0}'!", line));
+                            throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
 
                         iline = tokens2Leaf(tokens);
                     }
 
-                    if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", line));
+                    if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", node.Line.ExceptionString));
 
                     /*var definition = iline as VGPDefine;
                     if (definition != null) {
@@ -375,7 +377,7 @@ namespace VGPrompter {
                     var contents = new List<Line>();
                     var ifelse = new VGPIfElse(current_block);
 
-                    if (line[n - 1] != COLON) throw new Exception("Missing colon!");
+                    if (line[n - 1] != COLON) throw new Exception(string.Format("Expected ending colon in {0}!", node.Line.ExceptionString));
 
                     var trimmed_line = line.Substring(0, n - 1);
 
@@ -394,12 +396,12 @@ namespace VGPrompter {
                         iline = tokens2Node(trimmed_line.Split(WHITESPACE), current_block);
                     }
 
-                    if (iline == null) throw new Exception(string.Format("Null node from line '{0}'", line));
-                    if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception("Choice out of menu!");
+                    if (iline == null) throw new Exception(string.Format("Null node from {0}!", node.Line.ExceptionString));
+                    if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception(string.Format("Choice out of menu in {0}!", node.Line.ExceptionString));
 
                     foreach (var child in node.Children) {
                         var tmp = node2ILine(child, iline.GetType(), current_block, ref tm, ignore_unsupported_renpy);
-                        if (tmp == null) throw new Exception("Null child ILine!");
+                        if (tmp == null) throw new Exception(string.Format("Null child ILine in {0}!", node.Line.ExceptionString));
 
                         if (tmp is Conditional) {
 
@@ -429,7 +431,7 @@ namespace VGPrompter {
                     } else if (iline is IterableContainer) {
                         (iline as IterableContainer).Contents = contents;
                     } else {
-                        throw new Exception("Unexpected ILine container!");
+                        throw new Exception(string.Format("Unexpected ILine container in {0}!", node.Line.ExceptionString));
                     }
 
                 }
@@ -631,6 +633,8 @@ namespace VGPrompter {
                 public string Source { get; private set; }
                 public string Text { get; private set; }
                 public int Index { get; private set; }
+
+                public string ExceptionString => string.Format("'{0}' at line {1}: {2}!", Source, Index, Text);
 
                 public RawLine(string source, string text, int index) : this() {
                     Source = source;

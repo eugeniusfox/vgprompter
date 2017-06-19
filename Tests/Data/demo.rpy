@@ -1,8 +1,8 @@
 ﻿define noun = "color"
 define b = "Blue"
 define adj = "spinning"
-define sth = "cube"
-define things = "[adj] [sth]s"
+define sth  = "cube"
+define things =  "[adj] [sth]s"
 
 label start:
     if False: #asdfadf
