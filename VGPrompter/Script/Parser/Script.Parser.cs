@@ -598,7 +598,7 @@ namespace VGPrompter {
 
             /* From tokens to Line objects */
 
-            static VGPReference GetFunctionCall(string[] tokens) {
+            static VGPBaseReference GetFunctionCall(string[] tokens) {
                 var s = string.Join(string.Empty, tokens);
                 var m = function_call_re.Match(s);
                 if (!m.Success) return null;
@@ -609,7 +609,7 @@ namespace VGPrompter {
                 } else {
                     // Func
                     var argv = m.Groups[2].Value.Split(new char[] { ',' }).Select(x => x.Trim()).ToArray();
-                    return new VGPReference(m.Groups[1].Value, argv);
+                    return new VGPFunction(m.Groups[1].Value, argv);
                 }
             }
 
