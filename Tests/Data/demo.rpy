@@ -18,7 +18,7 @@ label start:
             "[b]":
                 TurnCubeBlue
             "The prohibited color!" if False:
-                DoNothing(rush, 2, six)
+                SomeDelegate(1, 2)
             "Not interested, thanks":
                 eu "That's enough for today." #[exp:sad, gesture:pray]
                 jump another_scene

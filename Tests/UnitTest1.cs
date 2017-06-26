@@ -78,6 +78,9 @@ namespace Tests {
             };
 
             script.SetDelegates(conditions, actions);
+            script.Functions = new Dictionary<string, Delegate>() {
+                { "SomeDelegate", (Action<int,int>)((a, b) => { }) }
+            };
 
             script.Prime();
             script.Validate();

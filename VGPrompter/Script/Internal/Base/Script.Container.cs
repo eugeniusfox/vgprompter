@@ -41,6 +41,10 @@ namespace VGPrompter {
                         var reference = item as VGPReference;
                         reference.Action = Script.GetAction(reference.Tag);
                         Script.Logger.Log(reference.Action);
+                    } else if (item is VGPFunction) {
+                        var f = item as VGPFunction;
+                        f.Delegate = Script.GetFunction(f.Tag);
+                        Script.Logger.Log(f.Delegate);
                     } else if (item is Conditional) {
                         (item as Conditional).Prime();
                     } else if (item is VGPChoice) {
