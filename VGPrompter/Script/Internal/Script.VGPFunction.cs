@@ -10,11 +10,11 @@ namespace VGPrompter {
             [NonSerialized]
             Delegate _delegate;
 
-            string[] _argv;
+            object[] _argv;
 
             public Delegate Delegate { get { return _delegate; } set { _delegate = value; } }
 
-            public VGPFunction(string label, params string[] argv) : base(label) {
+            public VGPFunction(string label, params object[] argv) : base(label) {
                 _argv = argv;
             }
 

@@ -97,7 +97,7 @@ namespace VGPrompter {
             static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
             static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
-            static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\((\w+(?:,\w+)*)\))?$", RegexOptions.Compiled);
+            static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\(((?:\w+|""\w+"")(?:,(?:\w+|""\w+""))*)\))?$", RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -345,7 +345,7 @@ namespace VGPrompter {
 
                     // Leaf
 
-                    if (line.Contains(QUOTE)) {
+                    /*if (line.Contains(QUOTE)) {
 
                         iline = GetLineLeaf(line, current_block.Label, ref tm);
 
@@ -359,7 +359,13 @@ namespace VGPrompter {
                             //throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
 
                         iline = tokens2Leaf(tokens);
-                    }
+                    }*/
+
+                    tokens = line.Split(WHITESPACE);
+
+                    iline = tokens2Leaf(tokens);
+
+                    if (iline == null) iline = GetLineLeaf(line, current_block.Label, ref tm);
 
                     if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", node.Line.ExceptionString));
 
@@ -608,7 +614,23 @@ namespace VGPrompter {
                     return new VGPReference(s);
                 } else {
                     // Func
-                    var argv = m.Groups[2].Value.Split(new char[] { ',' }).Select(x => x.Trim()).ToArray();
+                    object[] argv = m.Groups[2].Value
+                        .Split(new char[] { ',' })
+                        .Select<string,object>(x => {
+                            var a = x.Trim();
+                            if (a[0] == QUOTE && a[a.Length - 1] == QUOTE) {
+                                // Strip double quotes
+                                return a.Substring(1, a.Length - 2);
+                            } else if (x.All(c => char.IsDigit(c)) && int.TryParse(x, out int i)) {
+                                return i;
+                            } else if (double.TryParse(x, out double d)) {
+                                return d;
+                            } else {
+                                throw new Exception(string.Format(
+                                    "Unsupported type for argument '{0}'! Only [double quoted] string, integer, and double literals are allowed.", x));
+                            }
+                        }).ToArray();
+
                     return new VGPFunction(m.Groups[1].Value, argv);
                 }
             }
@@ -628,10 +650,12 @@ namespace VGPrompter {
                 }
 
                 var line = fallback?.Invoke(tokens);
-                if (line != null) return line;
 
-                Utils.LogArray("Invalid line", tokens, Logger);
-                throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
+                return line;
+
+                // if (line != null) return line;
+                // Utils.LogArray("Invalid line", tokens, Logger);
+                // throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
 
             }
 

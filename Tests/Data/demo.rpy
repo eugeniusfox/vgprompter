@@ -18,12 +18,14 @@ label start:
             "[b]":
                 TurnCubeBlue
             "The prohibited color!" if False:
-                SomeDelegate(1, 2)
+                #SomeOtherDelegate("test")
+                pass
             "Not interested, thanks":
                 eu "That's enough for today." #[exp:sad, gesture:pray]
+                SomeDelegate(1, 2)
                 jump another_scene
         #else:
-            #jump ignavius
+            #jump ignavus
 
         "Come on, another one!"
 

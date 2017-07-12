@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using VGPrompter;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Tests {
 
@@ -62,6 +63,10 @@ namespace Tests {
             }
         }
 
+        void SomeOtherDelegate(string y) {
+            Console.WriteLine(y);
+        }
+
         [TestMethod]
         public void TestDemoScriptEnumerator() {
             var script = LoadScript(GetResourcePath(DEMO));
@@ -79,11 +84,20 @@ namespace Tests {
 
             script.SetDelegates(conditions, actions);
             script.Functions = new Dictionary<string, Delegate>() {
-                { "SomeDelegate", (Action<int,int>)((a, b) => { }) }
+                { "SomeDelegate", (Action<int,int>)((a, b) => { }) },
+                { "SomeOtherDelegate", (Action<string>)SomeOtherDelegate }
             };
 
             script.Prime();
             script.Validate();
+
+            script.RunFromBeginning(
+                OnMenu: m => {
+                    var x = m;
+                    var idx = x.TrueChoices.Last().Index;
+                    return idx;
+                },
+                OnLine: l => { Console.WriteLine(l); });
         }
 
         [TestMethod]
