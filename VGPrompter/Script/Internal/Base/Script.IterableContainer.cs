@@ -152,8 +152,7 @@ namespace VGPrompter {
                         var ifelse = x as VGPIfElse;
                         var option = ifelse.GetContent();
 
-                        if (option == null)
-                            Script.Logger.Log("No condition evaluated to true!");
+                        if (option == null) continue;
 
                         foreach (var y in option)
                             yield return y;
