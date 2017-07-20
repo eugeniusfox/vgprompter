@@ -84,7 +84,10 @@ namespace Tests {
 
             script.SetDelegates(conditions, actions);
             script.Functions = new Dictionary<string, Delegate>() {
-                { "SomeDelegate", (Action<int,int>)((a, b) => { }) },
+                { "SomeDelegate", (Action<Script, int,int>)((s, a, b) => {
+                    Console.WriteLine(s);
+                    Console.WriteLine(a + b);
+                }) },
                 { "SomeOtherDelegate", (Action<string>)SomeOtherDelegate }
             };
 

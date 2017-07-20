@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace VGPrompter {
 
@@ -22,8 +24,21 @@ namespace VGPrompter {
                 return Delegate != null;
             }
 
+            Action GetAction(Script script = null) {
+                var arg_types = Delegate.GetType().GetGenericArguments();
+                if (arg_types[0] == typeof(Script)) {
+                    if (script == null) throw new Exception("Missing Script reference!");
+
+                    object[] args = { script };
+                    args = args.Concat(_argv).ToArray();
+                    return () => Delegate.DynamicInvoke(args);
+                }
+
+                return () => Delegate.DynamicInvoke(_argv);
+            }
+
             public override IScriptLine ToWrapper(Script script = null) {
-                return new Reference(Tag, () => Delegate.DynamicInvoke(_argv));
+                return new Reference(Tag, GetAction(script));
             }
 
         }

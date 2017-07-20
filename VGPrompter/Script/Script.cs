@@ -284,7 +284,6 @@ namespace VGPrompter {
                         OnReference(reference);
                     }
 
-
                 } else {
 
                     Logger.Log("Unhandled item type: " + x.ToString());
