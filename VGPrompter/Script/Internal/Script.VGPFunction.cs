@@ -14,27 +14,34 @@ namespace VGPrompter {
 
             object[] _argv;
 
+            Type[] ArgumentTypes { get => Delegate.GetType().GetGenericArguments(); }
+
             public Delegate Delegate { get { return _delegate; } set { _delegate = value; } }
+            public bool HasContext { get => ArgumentTypes[0] == typeof(Script); }
 
             public VGPFunction(string label, params object[] argv) : base(label) {
                 _argv = argv;
             }
 
             public override bool IsValid() {
-                return Delegate != null;
+                var offset = HasContext ? 1 : 0;
+                return
+                    Delegate != null &&
+                    ArgumentTypes.Count() == _argv.Length + offset &&
+                    _argv.Select((x, i) => x.GetType() == ArgumentTypes[i + offset]).All(x => x);
             }
 
             Action GetAction(Script script = null) {
-                var arg_types = Delegate.GetType().GetGenericArguments();
-                if (arg_types[0] == typeof(Script)) {
-                    if (script == null) throw new Exception("Missing Script reference!");
 
+                if (HasContext) {
+                    if (script == null) throw new Exception("Missing Script reference!");
                     object[] args = { script };
                     args = args.Concat(_argv).ToArray();
-                    return () => Delegate.DynamicInvoke(args);
+                    return () => Delegate.DynamicInvoke(args.ToArray());
+                } else {
+                    return () => Delegate.DynamicInvoke(_argv);
                 }
 
-                return () => Delegate.DynamicInvoke(_argv);
             }
 
             public override IScriptLine ToWrapper(Script script = null) {
