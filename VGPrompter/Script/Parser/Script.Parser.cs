@@ -108,9 +108,7 @@ namespace VGPrompter {
             static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
             const string literal_re = @"(?:[a-z,A-Z,_]\w*|""\w+""|'\w+'|\d+(?:\.\d+(?:f)?)?)";
-            static Regex function_call_re = new Regex(string.Format(@"^(\w+)\s*(?:\(({0}(?:,{0})*)\)|\(\s*\))?$", literal_re), RegexOptions.Compiled);
-
-            // static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\(((?:\w+|""\w+"")(?:,(?:\w+|""\w+""))*)\))?$", RegexOptions.Compiled);
+            static Regex function_call_re = new Regex(string.Format(@"^(\w+)\s*(?:\(({0}(?:,{0})*)?\))?$", literal_re), RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -665,10 +663,12 @@ namespace VGPrompter {
                 var m = function_call_re.Match(s);
                 if (!m.Success) return null;
 
-                if (m.Groups[2].Value == string.Empty) {
+                var tag = m.Groups[1].Value.Trim();
+
+                if (m.Groups[2].Value.Trim() == string.Empty) {
 
                     // Action
-                    return new VGPReference(s);
+                    return new VGPReference(tag);
 
                 } else {
 
@@ -680,7 +680,7 @@ namespace VGPrompter {
                                 "Unsupported type for argument '{0}'! Only boolean, string, integer, float and double literals are allowed.", x.Trim()));
                         }).ToArray();
 
-                    return new VGPFunction(m.Groups[1].Value, argv);
+                    return new VGPFunction(tag, argv);
 
                 }
             }

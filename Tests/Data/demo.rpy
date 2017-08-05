@@ -16,7 +16,7 @@ label start:
             "Green" if CurrentColorNotGreen:
                 TurnCubeGreen
             "[b]":
-                TurnCubeBlue
+                TurnCubeBlue()
             "The prohibited color!" if False:
                 #SomeOtherDelegate("test")
                 pass
