@@ -24,8 +24,7 @@ namespace VGPrompter {
 
             public VGPBlock(string label, List<Line> contents)
                 : this(label) {
-                if (contents == null) throw new Exception("Block contents can't be null!");
-                Contents = contents;
+                Contents = contents ?? throw new Exception("Block contents can't be null!");
             }
 
             public void RegisterID(int id) {

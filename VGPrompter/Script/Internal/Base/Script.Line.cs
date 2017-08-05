@@ -9,9 +9,14 @@ namespace VGPrompter {
 
             public abstract bool IsValid();
 
+            // protected abstract string ValidationErrorMessage { get; }
+
             public virtual void Validate() {
                 if (!IsValid()) {
-                    throw new Exception(string.Format("Invalid '{0}'!", this.ToString()));
+                    var msg = string.Format("Invalid '{0}'!", ToString());
+                    /* if (!string.IsNullOrEmpty(ValidationErrorMessage))
+                        msg += '\n' + ValidationErrorMessage;*/
+                    throw new Exception(msg);
                 }
             }
 

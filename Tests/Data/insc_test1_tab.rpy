@@ -5,9 +5,9 @@ label start:
 
 	"First [abc] anonymous line [xyz]."
 	char1 "Second line."
-	char1 "Third line."
+	char1 "Third line."  # Test quoted
 
-	menu:
+	menu:  # Test unquoted
 		"First anonymous choice [xyz]":
 			char1 "First choice line."
 		tag "Second named choice":

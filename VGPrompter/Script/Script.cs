@@ -23,12 +23,15 @@ namespace VGPrompter {
         [NonSerialized]
         Dictionary<string, Action> _actions;
         [NonSerialized]
+        Dictionary<string, Delegate> _functions;
+        [NonSerialized]
         TextManager _text_manager;
         [NonSerialized]
         bool _is_primed = false;
 
         public Dictionary<string, Func<bool>> Conditions { get { return _conditions; } set { _conditions = value; } }
         public Dictionary<string, Action> Actions { get { return _actions; } set { _actions = value; } }
+        public Dictionary<string, Delegate> Functions { get { return _functions; } set { _functions = value; } }
         public Dictionary<string, Dictionary<string, string>> Lines { get { return _text_manager.Lines; } }
         public Dictionary<string, string> Globals { get { return _text_manager.Globals; } }
 
@@ -213,10 +216,22 @@ namespace VGPrompter {
 
         public void Prime() {
             NumberOfMenus = 0;
+            var success = true;
             foreach (var block in Blocks.Values) {
-                block.Prime();
+                try {
+                    block.Prime();
+                } catch (KeyNotFoundException ex) {
+                    Logger.Log(ex.Message);
+                    success = false;
+                    break;
+                }
             }
-            IsPrimed = true;
+            IsPrimed = success;
+        }
+
+        public bool TryPrime() {
+            Prime();
+            return IsPrimed;
         }
 
         public void SetDelegates(Dictionary<string, Func<bool>> conditions, Dictionary<string, Action> actions) {
@@ -269,7 +284,6 @@ namespace VGPrompter {
                         OnReference(reference);
                     }
 
-
                 } else {
 
                     Logger.Log("Unhandled item type: " + x.ToString());
@@ -305,6 +319,10 @@ namespace VGPrompter {
 
         Action GetAction(string key) {
             return Utils.GetFromDictionary(key, Actions, Logger);
+        }
+
+        Delegate GetFunction(string key) {
+            return Utils.GetFromDictionary(key, Functions, Logger);
         }
 
         public byte[] ToBinary() {

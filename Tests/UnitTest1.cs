@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 using VGPrompter;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Tests {
 
@@ -15,6 +16,7 @@ namespace Tests {
 
         public static readonly string TEST_SCRIPT_1 = "insc_test1.rpy";
         public static readonly string TEST_SCRIPT_1_TAB = "insc_test1_tab.rpy";
+        public static readonly string DEMO = "demo.rpy";
 
         public Script LoadScript(string fp, Script.Parser.IndentChar indent = Script.Parser.IndentChar.Auto) {
 
@@ -40,7 +42,6 @@ namespace Tests {
 
         }
 
-
         [TestMethod]
         public void TestScriptPriming() {
 
@@ -51,7 +52,7 @@ namespace Tests {
         }
 
         [TestMethod]
-        public void TestScripEnumerator() {
+        public void TestScriptEnumerator() {
             var script = LoadScript(GetResourcePath(TEST_SCRIPT_1_TAB));
             script.Prime();
             script.Validate();
@@ -62,8 +63,53 @@ namespace Tests {
             }
         }
 
+        void SomeOtherDelegate(string y) {
+            Console.WriteLine(y);
+        }
+
+        delegate void Action<T1, T2, T3, T4, T5, T6, T7>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7);
+
+        void TestFunc(bool a, bool b, string c, string d, double e, int f, float g) { }
+
         [TestMethod]
-        public void TestScripEnumeratorWhile() {
+        public void TestDemoScriptEnumerator() {
+            var script = LoadScript(GetResourcePath(DEMO));
+            var conditions = new Dictionary<string, Func<bool>>() {
+                { "True", () => true },
+                { "False", () => false },
+                { "CurrentColorNotGreen", () => false }
+            };
+
+            var actions = new Dictionary<string, Action>() {
+                { "DoNothing", () => { } },
+                { "TurnCubeGreen", () => { } },
+                { "TurnCubeBlue", () => { } }
+            };
+
+            script.SetDelegates(conditions, actions);
+            script.Functions = new Dictionary<string, Delegate>() {
+                { "SomeDelegate", (Action<Script, int,int>)((s, a, b) => {
+                    Console.WriteLine(s);
+                    Console.WriteLine(a + b);
+                }) },
+                { "SomeOtherDelegate", (Action<string>)SomeOtherDelegate },
+                { "Test", (Action<bool, bool, string, string, double, int, float>)TestFunc }
+            };
+
+            script.Prime();
+            script.Validate();
+
+            script.RunFromBeginning(
+                OnMenu: m => {
+                    var x = m;
+                    var idx = x.TrueChoices.Last().Index;
+                    return idx;
+                },
+                OnLine: l => { Console.WriteLine(l); });
+        }
+
+        [TestMethod]
+        public void TestScriptEnumeratorWhile() {
             var script = LoadScript(GetResourcePath(TEST_SCRIPT_1_TAB));
             script.Prime();
             script.Validate();

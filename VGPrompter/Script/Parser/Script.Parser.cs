@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace VGPrompter {
 
@@ -28,8 +29,10 @@ namespace VGPrompter {
 
             const char
                 WHITESPACE = ' ',
+                FLOAT_SUFFIX = 'f',
                 TAB = '\t',
                 QUOTE = '"',
+                SINGLE_QUOTE = '\'',
                 COLON = ':',
                 COMMENT_CHAR = '#',
                 UNDERSCORE = '_',
@@ -64,19 +67,26 @@ namespace VGPrompter {
                 EQUAL = "=",
                 SCRIPT = "script";
 
+            const NumberStyles NUMBER_STYLE = NumberStyles.Any;
+
             public enum IndentChar {
                 Auto,
                 Whitespace,
                 Tab
             }
 
-            static readonly string[] UNSUPPORTED_RENPY_KEYWORDS = {
-                WITH, SHOW, HIDE, PLAY, STOP, SCENE, IMAGE, PAUSE
-            };
+            static readonly CultureInfo CULTURE_INFO = CultureInfo.InvariantCulture;
 
-            static readonly string[] UNSUPPORTED_RENPY_BLOCK_KEYWORDS = {
-                INIT, PYTHON, INIT_PYTHON
-            };
+            static readonly char[] COMMA_SPLIT = { ',' };
+
+            static readonly string[]
+                UNSUPPORTED_RENPY_KEYWORDS = {
+                    WITH, SHOW, HIDE, PLAY, STOP, SCENE, IMAGE, PAUSE
+                },
+
+                UNSUPPORTED_RENPY_BLOCK_KEYWORDS = {
+                    INIT, PYTHON, INIT_PYTHON
+                };
 
             static Regex line_re = new Regex(@"^(?:(\w+) )?""(.+)""$", RegexOptions.Compiled);
             static Regex define_re = new Regex(@"^define\s+(\w+)\s+=\s+(?:""(.*)""|(\d+(?:\.\d+)?))\s*$", RegexOptions.Compiled);
@@ -92,6 +102,16 @@ namespace VGPrompter {
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
             public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
 
+            static Regex inline_comment_re = new Regex(@"(.*"".*""|.*)\s+#.*$", RegexOptions.Compiled);
+            //static Regex comment_quotes_re = new Regex(@"(?:(?:"".*?"").*?)(\#.*?)$", RegexOptions.Compiled);
+            static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
+            static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
+
+            const string literal_re = @"(?:[a-z,A-Z,_]\w*|""\w+""|'\w+'|\d+(?:\.\d+(?:f)?)?)";
+            static Regex function_call_re = new Regex(string.Format(@"^(\w+)\s*(?:\(({0}(?:,{0})*)\)|\(\s*\))?$", literal_re), RegexOptions.Compiled);
+
+            // static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\(((?:\w+|""\w+"")(?:,(?:\w+|""\w+""))*)\))?$", RegexOptions.Compiled);
+
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
                 new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
@@ -104,8 +124,9 @@ namespace VGPrompter {
                 new ParserRule( PASS,         (tokens, parent) => new VGPPass(), 1),
                 new ParserRule( RETURN,       (tokens, parent) => new VGPReturn(), 1),
                 new ParserRule( JUMP,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: false), 2),
-                new ParserRule( CALL,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: true), 2),
-                new ParserRule( string.Empty, (tokens, parent) => new VGPReference(tokens[0]), 1)
+                new ParserRule( CALL,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: true), 2)
+                /*new ParserRule( string.Empty, (tokens, parent) => new VGPReference(tokens[0], argv: tokens.Length > 1 ? tokens.Skip(1).ToArray() : null), null,
+                                              (tokens)         => true)*/
             };
 
             static ParserRule[] NodeRules = new ParserRule[] {
@@ -131,11 +152,11 @@ namespace VGPrompter {
                 return ParseLines(lines, indent, ignore_unsupported_renpy);
             }
 
-            static string[] LoadRawLines(string path, bool recursive = false, bool ignore_unsupported_renpy = false) {
+            static RawLine[] LoadRawLines(string path, bool recursive = false, bool ignore_unsupported_renpy = false) {
 
                 if (Directory.Exists(path)) {
 
-                    var lines = new List<string>();
+                    var lines = new List<RawLine>();
                     var files = Utils.GetScriptFiles(path, recursive);
                     foreach (var f in files)
                         lines.AddRange(ReadLines(f, ignore_unsupported_renpy));
@@ -161,11 +182,13 @@ namespace VGPrompter {
                 throw new Exception("No indentation found!");
             }
 
-            static Script ParseLines(string[] lines, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
+            static Script ParseLines(RawLine[] lines, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
+
+                var lines_text = lines.Select(x => x.Text).ToArray();
 
                 char indent;
                 if (indent_enum == IndentChar.Auto) {
-                    indent = InferIndent(lines);
+                    indent = InferIndent(lines_text);
                 } else if (indent_enum == IndentChar.Tab) {
                     indent = TAB;
                 } else if (indent_enum == IndentChar.Whitespace) {
@@ -174,7 +197,7 @@ namespace VGPrompter {
                     throw new Exception("Invalid indent character!");
                 }
 
-                var depths = GetLineDepths(lines, indent);
+                var depths = GetLineDepths(lines_text, indent);
 
                 var indent_values = depths.Distinct().OrderBy(x => x).ToArray();
 
@@ -185,7 +208,9 @@ namespace VGPrompter {
                 var min_indent = 1;
 
                 if (indent == WHITESPACE) {
-                    min_indent = indent_values[0] == 0 ? indent_values[1] : indent_values[0];
+                    min_indent = indent_values.FirstOrDefault(x => x > 0);  // indent_values[0] == 0 ? indent_values[1] : indent_values[0];
+
+                    if (min_indent < 1) min_indent = 1;
 
                     // 2. Are all indents multiples of the indentation unit?
                     if (indent_values.Any(x => x % min_indent != 0)) throw new Exception("Irregular indentation!");
@@ -193,7 +218,13 @@ namespace VGPrompter {
 
                 var diffs = Diff(depths);
 
-                if (diffs.Any(x => x > min_indent)) throw new Exception("Unexpected indentation!");
+                for (int i = 0; i < lines.Length - 1; i++) {
+                    if (diffs[i] > min_indent) {
+                        throw new Exception(string.Format("Unexpected indentation in {0}!", lines[i].ExceptionString));
+                    }
+                }
+
+                //if (diffs.Any(x => x > min_indent)) throw new Exception("Unexpected indentation!");
 
 
                 // 3. Get label blocks
@@ -209,7 +240,9 @@ namespace VGPrompter {
 
                 foreach (var i in top_lines_indices) {
 
-                    line = lines[i].Trim();
+                    var raw_line = lines[i];
+
+                    line = raw_line.Text.Trim();
                     //n = line.Length;
 
                     /*if (line[n - 1] != COLON)
@@ -226,61 +259,27 @@ namespace VGPrompter {
 
                         var definition = GetDefinition(line, ref tm);
 
-                        if (definition == null) throw new Exception(string.Format("Invalid definition '{0}'!", line));
+                        if (definition == null) throw new Exception(string.Format("Invalid definition in {0}!", raw_line.ExceptionString));
 
                         if (!tm.TryAddDefinition(definition.Key, definition.Value)) {
-                            throw new Exception(string.Format("String '{0}' already defined!", definition.Key));
+                            throw new Exception(string.Format("Variable '{0}' already initialized in {1}!", definition.Key, raw_line.ExceptionString));
                         }
 
                     } else if (line.StartsWith(LABEL)) {
 
                         var block = tokens2TopLevel(line.Split(WHITESPACE)) as VGPBlock;
 
-                        if (block == null) throw new Exception(string.Format("Invalid label '{0}'!", line));
+                        if (block == null) throw new Exception(string.Format("Invalid label in {0}!", raw_line.ExceptionString));
 
                         labels.Add(block.Label);
                         label_lines_indices_tmp.Add(i);
 
                     } else {
 
-                        throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
+                        throw new Exception(string.Format("Invalid top-level statement in {0}!", raw_line.ExceptionString));
 
                     }
 
-                    /*
-                    var tokens = line.Contains(QUOTE) ? { } : line.Split(WHITESPACE);
-
-                    var stmt = tokens2TopLevel(tokens);
-
-                    if (stmt == null) throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
-
-                    if (stmt is VGPBlock) {
-
-                        labels.Add((stmt as VGPBlock).Label);
-                        label_lines_indices_tmp.Add(i);
-
-                    } else if (stmt is VGPDefine) {
-
-                        var tmp = stmt as VGPDefine;
-
-                        if (tm.Globals.ContainsKey(tmp.Key)) throw new Exception(string.Format("String '{0}' already defined!", tmp.Key));
-
-                        tmp.ToInterpolate = IsToInterpolate(tmp.Value, line, ref tm);
-
-                        tm.Globals[tmp.Key] = tmp.Value;
-
-                    } else {
-
-                        throw new Exception(string.Format("Top-level statement at line '{0}' is not a valid statement!", line));
-
-                    }
-                    */
-
-                    /*if (label_tokens.Length != 2 || label_tokens[0] != LABEL || string.IsNullOrEmpty(label_tokens[1]))
-                        throw new Exception("Top-level statement is not a valid statement!");
-
-                    label_lines_indices_tmp.Add(i);
-                    labels.Add(label_tokens[1]);*/
                 }
 
                 if (labels.GroupBy(x => x).Any(g => g.Count() > 1))
@@ -315,9 +314,9 @@ namespace VGPrompter {
                 return script;
             }
 
-            static Node renpy2tree(string[] lines, int[] label_lines_indices, char indent, bool print = false) {
+            static Node renpy2tree(RawLine[] lines, int[] label_lines_indices, char indent, bool print = false) {
                 int nidx = 0;
-                var root_node = new Node(SCRIPT, indent) { Level = -1 };
+                var root_node = Node.Root;
 
                 Node label_node = null;
                 foreach (var label_index in label_lines_indices) {
@@ -359,7 +358,7 @@ namespace VGPrompter {
 
                     // Leaf
 
-                    if (line.Contains(QUOTE)) {
+                    /*if (line.Contains(QUOTE)) {
 
                         iline = GetLineLeaf(line, current_block.Label, ref tm);
 
@@ -367,13 +366,21 @@ namespace VGPrompter {
 
                         tokens = line.Split(WHITESPACE);
 
-                        if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE)))
-                            throw new Exception(string.Format("Invalid characters in functional line '{0}'!", line));
+                        //Console.WriteLine(string.Format(">>> {0}", string.Join(", ", tokens)));
+
+                        //if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE || x == '(' || x == ')' || x == ',')))
+                            //throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
 
                         iline = tokens2Leaf(tokens);
-                    }
+                    }*/
 
-                    if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", line));
+                    tokens = line.Split(WHITESPACE);
+
+                    iline = tokens2Leaf(tokens);
+
+                    if (iline == null) iline = GetLineLeaf(line, current_block.Label, ref tm);
+
+                    if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", node.Line.ExceptionString));
 
                     /*var definition = iline as VGPDefine;
                     if (definition != null) {
@@ -392,7 +399,7 @@ namespace VGPrompter {
                     var contents = new List<Line>();
                     var ifelse = new VGPIfElse(current_block);
 
-                    if (line[n - 1] != COLON) throw new Exception("Missing colon!");
+                    if (line[n - 1] != COLON) throw new Exception(string.Format("Expected ending colon in {0}!", node.Line.ExceptionString));
 
                     var trimmed_line = line.Substring(0, n - 1);
 
@@ -411,12 +418,12 @@ namespace VGPrompter {
                         iline = tokens2Node(trimmed_line.Split(WHITESPACE), current_block);
                     }
 
-                    if (iline == null) throw new Exception(string.Format("Null node from line '{0}'", line));
-                    if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception("Choice out of menu!");
+                    if (iline == null) throw new Exception(string.Format("Null node from {0}!", node.Line.ExceptionString));
+                    if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception(string.Format("Choice out of menu in {0}!", node.Line.ExceptionString));
 
                     foreach (var child in node.Children) {
                         var tmp = node2ILine(child, iline.GetType(), current_block, ref tm, ignore_unsupported_renpy);
-                        if (tmp == null) throw new Exception("Null child ILine!");
+                        if (tmp == null) throw new Exception(string.Format("Null child ILine in {0}!", node.Line.ExceptionString));
 
                         if (tmp is Conditional) {
 
@@ -446,7 +453,7 @@ namespace VGPrompter {
                     } else if (iline is IterableContainer) {
                         (iline as IterableContainer).Contents = contents;
                     } else {
-                        throw new Exception("Unexpected ILine container!");
+                        throw new Exception(string.Format("Unexpected ILine container in {0}!", node.Line.ExceptionString));
                     }
 
                 }
@@ -483,7 +490,7 @@ namespace VGPrompter {
                 }
             }
 
-            static void ParseContents(string[] lines, Node parent, char indent, ref int i) {
+            static void ParseContents(RawLine[] lines, Node parent, char indent, ref int i) {
                 Node node;
                 while (++i < lines.Length) {
                     node = new Node(lines[i], indent);
@@ -610,7 +617,75 @@ namespace VGPrompter {
 
             /* From tokens to Line objects */
 
-            static Line tokens2Line(ParserRule[] rules, string[] tokens, VGPBlock parent = null) {
+            static object ParseLiteral(string s) {
+                if (s == TRUE) {
+
+                    // True
+                    return true;
+
+                } else if (s == FALSE) {
+
+                    // False
+                    return false;
+
+                } else if (
+                    (s[0] == QUOTE && s[s.Length - 1] == QUOTE) ||
+                    (s[0] == SINGLE_QUOTE && s[s.Length - 1] == SINGLE_QUOTE)) {
+
+                    // String
+                    return s.Substring(1, s.Length - 2);
+
+                } else if (s.All(c => char.IsDigit(c)) && int.TryParse(s, NUMBER_STYLE, CULTURE_INFO, out int i)) {
+
+                    // Integer
+                    return i;
+
+                } else if (double.TryParse(s, NUMBER_STYLE, CULTURE_INFO, out double d)) {
+
+                    // Double
+                    return d;
+
+                } else if (
+                    s[s.Length - 1] == FLOAT_SUFFIX &&
+                    float.TryParse(s.Substring(0, s.Length - 1), NUMBER_STYLE, CULTURE_INFO, out float f)) {
+
+                    // Float
+                    return f;
+
+                } else {
+
+                    // Null
+                    return null;
+
+                }
+            }
+
+            static VGPBaseReference GetFunctionCall(string[] tokens) {
+                var s = string.Join(string.Empty, tokens);
+                var m = function_call_re.Match(s);
+                if (!m.Success) return null;
+
+                if (m.Groups[2].Value == string.Empty) {
+
+                    // Action
+                    return new VGPReference(s);
+
+                } else {
+
+                    // Func
+                    object[] argv = m.Groups[2].Value
+                        .Split(COMMA_SPLIT)
+                        .Select(x => {
+                            return ParseLiteral(x.Trim()) ?? throw new Exception(string.Format(
+                                "Unsupported type for argument '{0}'! Only boolean, string, integer, float and double literals are allowed.", x.Trim()));
+                        }).ToArray();
+
+                    return new VGPFunction(m.Groups[1].Value, argv);
+
+                }
+            }
+
+            static Line tokens2Line(ParserRule[] rules, string[] tokens, VGPBlock parent = null, Func<string[], Line> fallback = null) {
 
                 var first_token = tokens[0];
 
@@ -624,8 +699,13 @@ namespace VGPrompter {
                     }
                 }
 
-                Utils.LogArray("Invalid line", tokens, Logger);
-                throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
+                var line = fallback?.Invoke(tokens);
+
+                return line;
+
+                // if (line != null) return line;
+                // Utils.LogArray("Invalid line", tokens, Logger);
+                // throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
 
             }
 
@@ -634,7 +714,7 @@ namespace VGPrompter {
             }
 
             static Line tokens2Leaf(string[] tokens) {
-                return tokens2Line(LeafRules, tokens);
+                return tokens2Line(LeafRules, tokens, fallback: GetFunctionCall);
             }
 
             static Line tokens2Node(string[] tokens, VGPBlock parent) {
@@ -644,11 +724,44 @@ namespace VGPrompter {
 
             /* Load and pre-filter rows */
 
-            static IEnumerable<string> ReadLines(string path, bool ignore_unsupported_renpy = false) {
+            struct RawLine {
+                public string Source { get; private set; }
+                public string Text { get; private set; }
+                public int Index { get; private set; }
+
+                public string ExceptionString => string.Format("'{0}' at line {1}: {2}!", Source, Index, Text);
+
+                public RawLine(string source, string text, int index) : this() {
+                    Source = source;
+                    Text = text;
+                    Index = index;
+                }
+
+                public RawLine Trim() {
+                    return new RawLine(Source, Text.Trim(), Index);
+                }
+            }
+
+            static IEnumerable<RawLine> ReadLines(string path, bool ignore_unsupported_renpy = false) {
                 return
                     File.ReadAllLines(path)
+                        .Select(y => {
+                            var line = y;
+                            
+                            // Handle in-line comments
+                            if (y.Contains('#')) {
+                                if (y.Contains('"')) {
+                                    line = comment_quotes_re.Replace(y, string.Empty);
+                                } else {
+                                    line = comment_no_quotes_re.Replace(y, string.Empty);
+                                }
+                                Console.WriteLine(line);
+                            }
+
+                            return line.TrimEnd();
+                        }).Select((x, i) => new RawLine(path, x, i))
                         .Where(x => {
-                            var y = x.Trim();
+                            var y = x.Text.Trim();
                             var res = !string.IsNullOrEmpty(y) && y[0] != COMMENT_CHAR;
                             if (res && ignore_unsupported_renpy) {
                                 res = !(y[0] == RENPY_PYLINE_CHAR || unsupported_renpy_re.Match(y).Success);

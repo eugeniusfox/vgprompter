@@ -44,7 +44,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Script\Internal\Base\Script.ITextual.cs" />
     <Compile Include="Script\Internal\Base\Script.IWrappable.cs" />
+    <Compile Include="Script\Internal\Base\Script.VGPBaseReference.cs" />
     <Compile Include="Script\Internal\Script.VGPDefine.cs" />
+    <Compile Include="Script\Internal\Script.VGPFunction.cs" />
+    <Compile Include="Script\Public\Character.cs" />
     <Compile Include="Script\Public\Script.Reference.cs" />
     <Compile Include="Script\Public\Script.DialogueLine.cs" />
     <Compile Include="Script\Public\Script.Choice.cs" />

@@ -5,25 +5,23 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class VGPReference : Line, IWrappable {
+        class VGPReference : VGPBaseReference {
 
             [NonSerialized]
             Action _action;
 
-            public string Tag { get; private set; }
             public Action Action { get { return _action; } set { _action = value; } }
 
-            public VGPReference(string label) {
-                Tag = label;
-            }
+            public VGPReference(string label) : base(label) { }
 
             public override bool IsValid() {
                 return Action != null;
             }
 
-            public IScriptLine ToWrapper(Script script = null) {
+            public override IScriptLine ToWrapper(Script script = null) {
                 return new Reference(Tag, Action);
             }
+
         }
 
     }
