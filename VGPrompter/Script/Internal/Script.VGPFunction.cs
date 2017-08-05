@@ -23,12 +23,36 @@ namespace VGPrompter {
                 _argv = argv;
             }
 
+            int ArgumentIndexOffset { get => HasContext ? 1 : 0; }
+            bool HasDelegate { get => Delegate != null; }
+            bool IsArityValid { get => ArgumentTypes.Count() == _argv.Length + ArgumentIndexOffset; }
+            bool AreArgumentsValid { get => _argv.Select((x, i) => x.GetType() == ArgumentTypes[i + ArgumentIndexOffset]).All(x => x); }
+
+            protected string ValidationErrorMessage { get {
+
+                    if (!HasDelegate) return "Null Delegate!";
+
+                    if (!IsArityValid) return string.Format(
+                        "Expected {0} arguments, got {1}!",
+                        ArgumentTypes.Count() - ArgumentIndexOffset, _argv.Length);
+
+                    if (!AreArgumentsValid) return string.Format(
+                        "Expected argument types <{1}>, got <{0}>!",
+                        string.Join(", ", _argv.Select(x => x.GetType().ToString()).ToArray()),
+                        string.Join(", ", ArgumentTypes.Select(x => x.ToString()).ToArray()));
+
+                    return string.Empty;
+
+                }
+            }
+
             public override bool IsValid() {
-                var offset = HasContext ? 1 : 0;
-                return
-                    Delegate != null &&
-                    ArgumentTypes.Count() == _argv.Length + offset &&
-                    _argv.Select((x, i) => x.GetType() == ArgumentTypes[i + offset]).All(x => x);
+                var result = HasDelegate && IsArityValid && AreArgumentsValid;
+                if (result) {
+                    return true;
+                } else {
+                    throw new Exception(Tag + ": " + ValidationErrorMessage);
+                }
             }
 
             Action GetAction(Script script = null) {
