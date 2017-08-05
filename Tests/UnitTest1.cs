@@ -67,6 +67,10 @@ namespace Tests {
             Console.WriteLine(y);
         }
 
+        delegate void Action<T1, T2, T3, T4, T5, T6, T7>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7);
+
+        void TestFunc(bool a, bool b, string c, string d, double e, int f, float g) { }
+
         [TestMethod]
         public void TestDemoScriptEnumerator() {
             var script = LoadScript(GetResourcePath(DEMO));
@@ -88,7 +92,8 @@ namespace Tests {
                     Console.WriteLine(s);
                     Console.WriteLine(a + b);
                 }) },
-                { "SomeOtherDelegate", (Action<string>)SomeOtherDelegate }
+                { "SomeOtherDelegate", (Action<string>)SomeOtherDelegate },
+                { "Test", (Action<bool, bool, string, string, double, int, float>)TestFunc }
             };
 
             script.Prime();

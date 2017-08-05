@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace VGPrompter {
 
@@ -28,8 +29,10 @@ namespace VGPrompter {
 
             const char
                 WHITESPACE = ' ',
+                FLOAT_SUFFIX = 'f',
                 TAB = '\t',
                 QUOTE = '"',
+                SINGLE_QUOTE = '\'',
                 COLON = ':',
                 COMMENT_CHAR = '#',
                 UNDERSCORE = '_',
@@ -64,19 +67,26 @@ namespace VGPrompter {
                 EQUAL = "=",
                 SCRIPT = "script";
 
+            const NumberStyles NUMBER_STYLE = NumberStyles.Any;
+
             public enum IndentChar {
                 Auto,
                 Whitespace,
                 Tab
             }
 
-            static readonly string[] UNSUPPORTED_RENPY_KEYWORDS = {
-                WITH, SHOW, HIDE, PLAY, STOP, SCENE, IMAGE, PAUSE
-            };
+            static readonly CultureInfo CULTURE_INFO = CultureInfo.InvariantCulture;
 
-            static readonly string[] UNSUPPORTED_RENPY_BLOCK_KEYWORDS = {
-                INIT, PYTHON, INIT_PYTHON
-            };
+            static readonly char[] COMMA_SPLIT = { ',' };
+
+            static readonly string[]
+                UNSUPPORTED_RENPY_KEYWORDS = {
+                    WITH, SHOW, HIDE, PLAY, STOP, SCENE, IMAGE, PAUSE
+                },
+
+                UNSUPPORTED_RENPY_BLOCK_KEYWORDS = {
+                    INIT, PYTHON, INIT_PYTHON
+                };
 
             static Regex line_re = new Regex(@"^(?:(\w+) )?""(.+)""$", RegexOptions.Compiled);
             static Regex define_re = new Regex(@"^define\s+(\w+)\s+=\s+(?:""(.*)""|(\d+(?:\.\d+)?))\s*$", RegexOptions.Compiled);
@@ -97,7 +107,10 @@ namespace VGPrompter {
             static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
             static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
-            static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\(((?:\w+|""\w+"")(?:,(?:\w+|""\w+""))*)\))?$", RegexOptions.Compiled);
+            const string literal_re = @"(?:[a-z,A-Z,_]\w*|""\w+""|'\w+'|\d+(?:\.\d+(?:f)?)?)";
+            static Regex function_call_re = new Regex(string.Format(@"^(\w+)\s*(?:\(({0}(?:,{0})*)\)|\(\s*\))?$", literal_re), RegexOptions.Compiled);
+
+            // static Regex function_call_re = new Regex(@"^(\w+)\s*(?:\(((?:\w+|""\w+"")(?:,(?:\w+|""\w+""))*)\))?$", RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
@@ -604,34 +617,71 @@ namespace VGPrompter {
 
             /* From tokens to Line objects */
 
+            static object ParseLiteral(string s) {
+                if (s == TRUE) {
+
+                    // True
+                    return true;
+
+                } else if (s == FALSE) {
+
+                    // False
+                    return false;
+
+                } else if (
+                    (s[0] == QUOTE && s[s.Length - 1] == QUOTE) ||
+                    (s[0] == SINGLE_QUOTE && s[s.Length - 1] == SINGLE_QUOTE)) {
+
+                    // String
+                    return s.Substring(1, s.Length - 2);
+
+                } else if (s.All(c => char.IsDigit(c)) && int.TryParse(s, NUMBER_STYLE, CULTURE_INFO, out int i)) {
+
+                    // Integer
+                    return i;
+
+                } else if (double.TryParse(s, NUMBER_STYLE, CULTURE_INFO, out double d)) {
+
+                    // Double
+                    return d;
+
+                } else if (
+                    s[s.Length - 1] == FLOAT_SUFFIX &&
+                    float.TryParse(s.Substring(0, s.Length - 1), NUMBER_STYLE, CULTURE_INFO, out float f)) {
+
+                    // Float
+                    return f;
+
+                } else {
+
+                    // Null
+                    return null;
+
+                }
+            }
+
             static VGPBaseReference GetFunctionCall(string[] tokens) {
                 var s = string.Join(string.Empty, tokens);
                 var m = function_call_re.Match(s);
                 if (!m.Success) return null;
 
                 if (m.Groups[2].Value == string.Empty) {
+
                     // Action
                     return new VGPReference(s);
+
                 } else {
+
                     // Func
                     object[] argv = m.Groups[2].Value
-                        .Split(new char[] { ',' })
-                        .Select<string,object>(x => {
-                            var a = x.Trim();
-                            if (a[0] == QUOTE && a[a.Length - 1] == QUOTE) {
-                                // Strip double quotes
-                                return a.Substring(1, a.Length - 2);
-                            } else if (x.All(c => char.IsDigit(c)) && int.TryParse(x, out int i)) {
-                                return i;
-                            } else if (double.TryParse(x, out double d)) {
-                                return d;
-                            } else {
-                                throw new Exception(string.Format(
-                                    "Unsupported type for argument '{0}'! Only [double quoted] string, integer, and double literals are allowed.", x));
-                            }
+                        .Split(COMMA_SPLIT)
+                        .Select(x => {
+                            return ParseLiteral(x.Trim()) ?? throw new Exception(string.Format(
+                                "Unsupported type for argument '{0}'! Only boolean, string, integer, float and double literals are allowed.", x.Trim()));
                         }).ToArray();
 
                     return new VGPFunction(m.Groups[1].Value, argv);
+
                 }
             }
 

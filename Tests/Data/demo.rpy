@@ -23,6 +23,7 @@ label start:
             "Not interested, thanks":
                 eu "That's enough for today." #[exp:sad, gesture:pray]
                 SomeDelegate(1, 2)
+                Test(True, False, "s1", 's2', 1.0, 12, 2.0f)
                 jump another_scene
         #else:
             #jump ignavus
