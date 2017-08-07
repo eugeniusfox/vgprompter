@@ -88,34 +88,57 @@ namespace VGPrompter {
                     INIT, PYTHON, INIT_PYTHON
                 };
 
-            static Regex line_re = new Regex(@"^(?:(\w+) )?""(.+)""$", RegexOptions.Compiled);
-            static Regex define_re = new Regex(@"^define\s+(\w+)\s+=\s+(?:""(.*)""|(\d+(?:\.\d+)?))\s*$", RegexOptions.Compiled);
-            static Regex choice_re = new Regex(@"^(?:(\w+) )?""(.+)""(?: if (\w+))?$", RegexOptions.Compiled);
+            const string
+                IDENTIFIER = @"[a-zA-Z_]\w*",
+                NUMERIC = @"\d+(?:\.\d+(?:f)?)?",
+                DOUBLE_QUOTED_STRING_LITERAL = @""".*""",
+                DOUBLE_QUOTED_STRING_LITERAL_CAPTURING = @"""(.*)""";
 
-            static Regex unsupported_renpy_re = new Regex(string.Format(@"^({0}) \w+", string.Join(PIPE, UNSUPPORTED_RENPY_KEYWORDS)), RegexOptions.Compiled);
-            static Regex unsupported_renpy_block_re = new Regex(string.Format(@"^({0}) ?.*:$", string.Join(PIPE, UNSUPPORTED_RENPY_BLOCK_KEYWORDS)), RegexOptions.Compiled);
 
-            static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
-            static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
+            static readonly string
 
-            //public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[).+(?=\])", RegexOptions.Compiled);
+                LITERAL = string.Format(
+                    @"(?:{0}|"".*""|'.*'|{1}|True|False)", IDENTIFIER, NUMERIC),
+
+                FUNCTION_CALL = string.Format(
+                    @"({0})\s*(?:\(({1}(?:,{1})*)?\))?", IDENTIFIER, LITERAL),
+
+                LINE_RE = string.Format(
+                    @"^(?:({0}) )?{1}$", IDENTIFIER, DOUBLE_QUOTED_STRING_LITERAL_CAPTURING),
+
+                DEFINE_RE = string.Format(
+                    @"^define\s+({0})\s+=\s+(?:{1}|({2}))\s*$", IDENTIFIER, DOUBLE_QUOTED_STRING_LITERAL_CAPTURING, NUMERIC),
+
+                CHOICE_RE = string.Format(
+                    @"^(?:({0})\s+)?{1}(?:\s+if\s+({2}))?$", IDENTIFIER, DOUBLE_QUOTED_STRING_LITERAL_CAPTURING, FUNCTION_CALL);
+
+
+            static Regex line_re = new Regex(LINE_RE, RegexOptions.Compiled);
+            static Regex define_re = new Regex(DEFINE_RE, RegexOptions.Compiled);
+            static Regex choice_re = new Regex(CHOICE_RE, RegexOptions.Compiled);
+
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
             public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
 
             static Regex inline_comment_re = new Regex(@"(.*"".*""|.*)\s+#.*$", RegexOptions.Compiled);
-            //static Regex comment_quotes_re = new Regex(@"(?:(?:"".*?"").*?)(\#.*?)$", RegexOptions.Compiled);
             static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
             static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
-            const string literal_re = @"(?:[a-z,A-Z,_]\w*|""\w+""|'\w+'|\d+(?:\.\d+(?:f)?)?)";
-            static Regex function_call_re = new Regex(string.Format(@"^(\w+)\s*(?:\(({0}(?:,{0})*)?\))?$", literal_re), RegexOptions.Compiled);
+            static Regex function_call_re = new Regex(FUNCTION_CALL, RegexOptions.Compiled);
+            static Regex function_call_line_re = new Regex(string.Format("^{0}$", FUNCTION_CALL), RegexOptions.Compiled);
+
+            // Legacy regular expressions
+            static Regex unsupported_renpy_re = new Regex(string.Format(@"^({0}) \w+", string.Join(PIPE, UNSUPPORTED_RENPY_KEYWORDS)), RegexOptions.Compiled);
+            static Regex unsupported_renpy_block_re = new Regex(string.Format(@"^({0}) ?.*:$", string.Join(PIPE, UNSUPPORTED_RENPY_BLOCK_KEYWORDS)), RegexOptions.Compiled);
+            // static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
+            // static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
 
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
                 new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
-                                              (tokens)         => tokens[1][tokens[1].Length - 1] == COLON),
-                new ParserRule( DEFINE,       (tokens, parent) => new VGPDefine(tokens[1], UnescapeTextString(UnquoteString(tokens[3])), false), 4,
-                                              (tokens)         => tokens[2] == EQUAL && define_value_re.IsMatch(tokens[3]))
+                                              (tokens)         => tokens[1][tokens[1].Length - 1] == COLON)
+                /*new ParserRule( DEFINE,       (tokens, parent) => new VGPDefine(tokens[1], UnescapeTextString(UnquoteString(tokens[3])), false), 4,
+                                              (tokens)         => tokens[2] == EQUAL && define_value_re.IsMatch(tokens[3]))*/
             };
 
             static ParserRule[] LeafRules = new ParserRule[] {
@@ -129,7 +152,7 @@ namespace VGPrompter {
 
             static ParserRule[] NodeRules = new ParserRule[] {
                 new ParserRule( MENU,         (tokens, parent) => new VGPMenu(parent, tokens.Length == 2 ? (int?)int.Parse(tokens[1]) : null), null,
-                                              (tokens)         => tokens.Length == 1 || (tokens.Length == 2 && integer_re.IsMatch(tokens[1]))),
+                                              (tokens)         => tokens.Length == 1 || (tokens.Length == 2 && IsInteger(tokens[1]))),
 
                 new ParserRule( IF,           (tokens, parent) => new Conditional.If(tokens[1], parent), 2),
                 new ParserRule( ELIF,         (tokens, parent) => new Conditional.ElseIf(tokens[1], parent), 2),
@@ -137,13 +160,14 @@ namespace VGPrompter {
                 new ParserRule( WHILE,        (tokens, parent) => new VGPWhile(tokens[1], parent), 2)
             };
 
-            static string UnquoteString(string value) {
-                return value[0] == '"' && value[value.Length - 1] == '"' ? value.Substring(1, value.Length - 2) : value;
-            }
+            static bool IsInteger(string s) =>
+                s.All(c => char.IsDigit(c));
 
-            internal static string CustomUnescapeString(string s) {
-                return s.Replace(@"\[", @"[");
-            }
+            static string UnquoteString(string value) =>
+                value[0] == '"' && value[value.Length - 1] == '"' ? value.Substring(1, value.Length - 2) : value;
+
+            internal static string CustomUnescapeString(string s) =>
+                s.Replace(@"\[", @"[");
 
             public static Script ParseSource(string path, bool recursive = false, IndentChar indent = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
                 var lines = LoadRawLines(path, recursive, ignore_unsupported_renpy);
@@ -660,7 +684,7 @@ namespace VGPrompter {
 
             static VGPBaseReference GetFunctionCall(string[] tokens) {
                 var s = string.Join(string.Empty, tokens);
-                var m = function_call_re.Match(s);
+                var m = function_call_line_re.Match(s);
                 if (!m.Success) return null;
 
                 var tag = m.Groups[1].Value.Trim();
