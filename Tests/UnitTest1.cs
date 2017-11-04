@@ -33,7 +33,7 @@ namespace Tests {
 
             Script.Parser.Logger = new VGPrompter.Logger();
 
-            var script = Script.FromSource(fp, indent: indent, ignore_unsupported_renpy: false);
+            var script = Script.FromSource(fp, indent: indent);
             script.Conditions = conditions;
 
             script.Logger = new VGPrompter.Logger();

@@ -127,12 +127,6 @@ namespace VGPrompter {
             static Regex function_call_re = new Regex(FUNCTION_CALL, RegexOptions.Compiled);
             static Regex function_call_line_re = new Regex(string.Format("^{0}$", FUNCTION_CALL), RegexOptions.Compiled);
 
-            // Legacy regular expressions
-            static Regex unsupported_renpy_re = new Regex(string.Format(@"^({0}) \w+", string.Join(PIPE, UNSUPPORTED_RENPY_KEYWORDS)), RegexOptions.Compiled);
-            static Regex unsupported_renpy_block_re = new Regex(string.Format(@"^({0}) ?.*:$", string.Join(PIPE, UNSUPPORTED_RENPY_BLOCK_KEYWORDS)), RegexOptions.Compiled);
-            // static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
-            // static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
-
             // The DEFINE rule is never used (due to the non-standard tokenization it requires)
             static ParserRule[] TopLevelRules = new ParserRule[] {
                 new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
@@ -169,25 +163,25 @@ namespace VGPrompter {
             internal static string CustomUnescapeString(string s) =>
                 s.Replace(@"\[", @"[");
 
-            public static Script ParseSource(string path, bool recursive = false, IndentChar indent = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
-                var lines = LoadRawLines(path, recursive, ignore_unsupported_renpy);
-                return ParseLines(lines, indent, ignore_unsupported_renpy);
+            public static Script ParseSource(string path, bool recursive = false, IndentChar indent = IndentChar.Auto) {
+                var lines = LoadRawLines(path, recursive);
+                return ParseLines(lines, indent);
             }
 
-            static RawLine[] LoadRawLines(string path, bool recursive = false, bool ignore_unsupported_renpy = false) {
+            static RawLine[] LoadRawLines(string path, bool recursive = false) {
 
                 if (Directory.Exists(path)) {
 
                     var lines = new List<RawLine>();
                     var files = Utils.GetScriptFiles(path, recursive);
                     foreach (var f in files)
-                        lines.AddRange(ReadLines(f, ignore_unsupported_renpy));
+                        lines.AddRange(ReadLines(f));
 
                     return lines.ToArray();
 
                 } else if (File.Exists(path)) {
 
-                    return ReadLines(path, ignore_unsupported_renpy).ToArray();
+                    return ReadLines(path).ToArray();
 
                 } else {
 
@@ -204,7 +198,7 @@ namespace VGPrompter {
                 throw new Exception("No indentation found!");
             }
 
-            static Script ParseLines(RawLine[] lines, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
+            static Script ParseLines(RawLine[] lines, IndentChar indent_enum = IndentChar.Auto) {
 
                 var lines_text = lines.Select(x => x.Text).ToArray();
 
@@ -265,17 +259,6 @@ namespace VGPrompter {
                     var raw_line = lines[i];
 
                     line = raw_line.Text.Trim();
-                    //n = line.Length;
-
-                    /*if (line[n - 1] != COLON)
-                        throw new Exception(string.Format("Missing colon at line '{0}'!", line));*/
-
-                    if (unsupported_renpy_block_re.IsMatch(line)) {
-                        Logger.Log(string.Format("Ignoring top-level Ren'Py block '{0}'", line));
-                        continue;
-                    }
-
-                    //var label_tokens = line.Substring(0, n - 1).Split(WHITESPACE);
 
                     if (line.StartsWith(DEFINE)) {
 
@@ -319,7 +302,7 @@ namespace VGPrompter {
 
                 // 5. Create script
 
-                var script = tree2script(tree, ref tm, ignore_unsupported_renpy);
+                var script = tree2script(tree, ref tm);
                 return script;
             }
 
@@ -353,14 +336,14 @@ namespace VGPrompter {
                 return root_node;
             }
 
-            static Script tree2script(Node root_node, ref TextManager tm, bool ignore_unsupported_renpy = false) {
+            static Script tree2script(Node root_node, ref TextManager tm) {
                 VGPBlock block;
                 var blocks = new List<VGPBlock>();
 
                 foreach (var node in root_node.Children) {
                     // Format checks were performed in a previous step
 
-                    block = node2ILine(node, null, null, ref tm, ignore_unsupported_renpy) as VGPBlock;
+                    block = node2ILine(node, null, null, ref tm) as VGPBlock;
                     //Logger.Log(block.ToString());
 
                     blocks.Add(block);
@@ -369,7 +352,7 @@ namespace VGPrompter {
                 return blocks2script(blocks, ref tm);
             }
 
-            static Line node2ILine(Node node, Type parent_type, VGPBlock block, ref TextManager tm, bool ignore_unsupported_renpy = false) {
+            static Line node2ILine(Node node, Type parent_type, VGPBlock block, ref TextManager tm) {
                 Line iline = null;
                 var line = node.Label;
                 var n = line.Length;
@@ -404,19 +387,9 @@ namespace VGPrompter {
 
                     if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", node.Line.ExceptionString));
 
-                    /*var definition = iline as VGPDefine;
-                    if (definition != null) {
-                        current_block.Variables.Add(definition.Key, definition.Value);
-                    }*/
-
                 } else {
 
                     // Node
-
-                    if (ignore_unsupported_renpy && unsupported_renpy_block_re.IsMatch(line)) {
-                        Logger.Log(string.Format("Ignoring Ren'Py block '{0}'", line));
-                        return new VGPPass();
-                    }
 
                     var contents = new List<Line>();
                     var ifelse = new VGPIfElse(current_block);
@@ -444,7 +417,7 @@ namespace VGPrompter {
                     if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception(string.Format("Choice out of menu in {0}!", node.Line.ExceptionString));
 
                     foreach (var child in node.Children) {
-                        var tmp = node2ILine(child, iline.GetType(), current_block, ref tm, ignore_unsupported_renpy);
+                        var tmp = node2ILine(child, iline.GetType(), current_block, ref tm);
                         if (tmp == null) throw new Exception(string.Format("Null child ILine in {0}!", node.Line.ExceptionString));
 
                         if (tmp is Conditional) {
@@ -766,7 +739,7 @@ namespace VGPrompter {
                 }
             }
 
-            static IEnumerable<RawLine> ReadLines(string path, bool ignore_unsupported_renpy = false) {
+            static IEnumerable<RawLine> ReadLines(string path) {
                 return
                     File.ReadAllLines(path)
                         .Select(y => {
@@ -786,13 +759,7 @@ namespace VGPrompter {
                         }).Select((x, i) => new RawLine(path, x, i))
                         .Where(x => {
                             var y = x.Text.Trim();
-                            var res = !string.IsNullOrEmpty(y) && y[0] != COMMENT_CHAR;
-                            if (res && ignore_unsupported_renpy) {
-                                res = !(y[0] == RENPY_PYLINE_CHAR || unsupported_renpy_re.Match(y).Success);
-                                if (!res)
-                                    Logger.Log(string.Format("Ignoring '{0}'", y));
-                            }
-                            return res;
+                            return !string.IsNullOrEmpty(y) && y[0] != COMMENT_CHAR;
                         });
             }
 

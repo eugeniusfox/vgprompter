@@ -180,13 +180,8 @@ namespace VGPrompter {
             return script;
         }
 
-        public static Script FromSource(
-            string path,
-            bool recursive = false,
-            Parser.IndentChar indent = Parser.IndentChar.Auto,
-            bool ignore_unsupported_renpy = false) {
-
-            return Parser.ParseSource(path, recursive, indent, ignore_unsupported_renpy);
+        public static Script FromSource(string path, bool recursive = false, Parser.IndentChar indent = Parser.IndentChar.Auto) {
+            return Parser.ParseSource(path, recursive, indent);
         }
 
 
