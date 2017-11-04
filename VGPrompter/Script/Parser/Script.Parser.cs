@@ -34,7 +34,6 @@ namespace VGPrompter {
                 QUOTE = '"',
                 SINGLE_QUOTE = '\'',
                 COLON = ':',
-                COMMENT_CHAR = '#',
                 UNDERSCORE = '_',
                 RENPY_PYLINE_CHAR = '$';
 
@@ -119,10 +118,6 @@ namespace VGPrompter {
 
             public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
             public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
-
-            static Regex inline_comment_re = new Regex(@"(.*"".*""|.*)\s+#.*$", RegexOptions.Compiled);
-            static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
-            static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
 
             static Regex function_call_re = new Regex(FUNCTION_CALL, RegexOptions.Compiled);
             static Regex function_call_line_re = new Regex(string.Format("^{0}$", FUNCTION_CALL), RegexOptions.Compiled);
@@ -362,22 +357,6 @@ namespace VGPrompter {
                 if (node.IsEmpty) {
 
                     // Leaf
-
-                    /*if (line.Contains(QUOTE)) {
-
-                        iline = GetLineLeaf(line, current_block.Label, ref tm);
-
-                    } else {
-
-                        tokens = line.Split(WHITESPACE);
-
-                        //Console.WriteLine(string.Format(">>> {0}", string.Join(", ", tokens)));
-
-                        //if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE || x == '(' || x == ')' || x == ',')))
-                            //throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
-
-                        iline = tokens2Leaf(tokens);
-                    }*/
 
                     tokens = line.Split(WHITESPACE);
 
@@ -721,46 +700,11 @@ namespace VGPrompter {
 
             /* Load and pre-filter rows */
 
-            struct RawLine {
-                public string Source { get; private set; }
-                public string Text { get; private set; }
-                public int Index { get; private set; }
-
-                public string ExceptionString => string.Format("'{0}' at line {1}: {2}!", Source, Index, Text);
-
-                public RawLine(string source, string text, int index) : this() {
-                    Source = source;
-                    Text = text;
-                    Index = index;
-                }
-
-                public RawLine Trim() {
-                    return new RawLine(Source, Text.Trim(), Index);
-                }
-            }
-
             static IEnumerable<RawLine> ReadLines(string path) {
                 return
                     File.ReadAllLines(path)
-                        .Select(y => {
-                            var line = y;
-                            
-                            // Handle in-line comments
-                            if (y.Contains('#')) {
-                                if (y.Contains('"')) {
-                                    line = comment_quotes_re.Replace(y, string.Empty);
-                                } else {
-                                    line = comment_no_quotes_re.Replace(y, string.Empty);
-                                }
-                                Console.WriteLine(line);
-                            }
-
-                            return line.TrimEnd();
-                        }).Select((x, i) => new RawLine(path, x, i))
-                        .Where(x => {
-                            var y = x.Text.Trim();
-                            return !string.IsNullOrEmpty(y) && y[0] != COMMENT_CHAR;
-                        });
+                        .Select((x, i) => new RawLine(path, x, i))
+                        .Where(x => !x.IsEmptyOrComment);
             }
 
         }
