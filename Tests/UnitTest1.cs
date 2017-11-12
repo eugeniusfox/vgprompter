@@ -194,18 +194,28 @@ namespace Tests {
         [TestMethod]
         public void TestNewParser() {
 
-            var rm = new VGPrompter.Script.ResourceManager();
-            List<Script.Parser.RawLine> lines;
-            List<string> labels;
-            Script.Parser.ParseVGPScriptFile(NEW_DEMO, rm, out lines, out labels);
-            foreach (var line in lines) {
-                Console.WriteLine(line.Text);
-            }
-            foreach (var label in labels) {
-                Console.WriteLine(label);
+            var script = new Script.Parser.PPVGPScript();
+            script.ParseFile(NEW_DEMO);
+            foreach (var block in script.Contents) {
+                Console.WriteLine(block.Key);
+                foreach (var line in block.Value) {
+                    Console.WriteLine(line.Text);
+                }
             }
 
         }
+
+        /*[TestMethod]
+        public void TestNewParserMulti() {
+            var script = Script.Parser.LoadRawLines2(NEW_DEMO);
+            foreach (var line in script.Lines) {
+                Console.WriteLine(line.Text);
+            }
+            Console.WriteLine("\n");
+            foreach (var label in script.Labels) {
+                Console.WriteLine(label);
+            }
+        }*/
 
     }
 

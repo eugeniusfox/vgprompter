@@ -44,6 +44,7 @@
     <Compile Include="Script\Internal\Script.VGPCodeSnippet.cs" />
     <Compile Include="Script\Parser\Script.NewParser.cs" />
     <Compile Include="Script\Parser\Script.Parser.ParserRule.cs" />
+    <Compile Include="Script\Parser\Script.Parser.PPVGPScript.cs" />
     <Compile Include="Script\ResourceManager.cs" />
     <Compile Include="VGPScript\Public\VGPBaseChoice.cs" />
     <Compile Include="VGPScript\Public\VGPBaseDialogueLine.cs" />

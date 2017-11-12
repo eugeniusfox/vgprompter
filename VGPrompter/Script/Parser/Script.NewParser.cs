@@ -11,32 +11,33 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
-
             public static Script ParseSource2(string path, bool recursive = false, IndentChar indent = IndentChar.Auto) {
-                var lines = LoadRawLines2(path, recursive);
-                return ParseLines2(lines, indent);
+                var ppscript = LoadRawLines2(path, recursive);
+                return ParseLines2(ppscript, indent);
             }
 
-            static RawLine[] LoadRawLines2(string path, bool recursive = false) {
+            public static PPVGPScript LoadRawLines2(string path, bool recursive = false) {
+
+                var script = new PPVGPScript();
 
                 if (Directory.Exists(path)) {
 
-                    var lines = new List<RawLine>();
                     var files = Utils.GetScriptFiles(path, recursive);
-                    foreach (var f in files)
-                        lines.AddRange(ReadLines(f));
-
-                    return lines.ToArray();
+                    foreach (var f in files) {
+                        script.ParseFile(f);
+                    }
 
                 } else if (File.Exists(path)) {
 
-                    return ReadLines(path).ToArray();
+                    script.ParseFile(path);
 
                 } else {
 
                     throw new Exception("Missing source file or directory!");
 
                 }
+
+                return script;
 
             }
 
@@ -96,138 +97,7 @@ namespace VGPrompter {
                 return string.Format("{0}${1}", indent_str, id);
             }
 
-            public static void ParseVGPScriptFile(string path, ResourceManager rm, out List<RawLine> lines, out List<string> labels, IndentChar indent_enum = IndentChar.Auto) {
-                var raw_lines = File.ReadAllLines(path);
-
-                // Get info on the indentation
-                var indent = GetIndentCharacter(indent_enum, raw_lines);
-                var min_indent = GetIndentationUnit(indent, raw_lines);
-
-                // Top-level elements
-                labels = new List<string>();
-                var label_lines_indices = new List<int>();
-
-                // Code snippet
-                int? multiline_snippet_i = null;
-                var in_multiline_snippet = false;
-                var current_level = 0;
-                var snippet = string.Empty;
-
-                lines = new List<RawLine>();
-
-                for (int i = 0; i < raw_lines.Count(); i++) {
-                    var r = raw_lines[i];
-                    var t = r.TrimStart();
-
-                    // Skip empty and comment lines
-                    if (!in_multiline_snippet && (string.IsNullOrEmpty(t) || t[0] == COMMENT_CHAR)) continue;
-
-                    // Check indentation
-                    var indent_length = GetLevel(indent, r);
-                    if (!in_multiline_snippet && indent_length % min_indent != 0)
-                        throw new Exception(string.Format(
-                            "Irregular indentation in '{0}' at line {1}!", path, i));
-
-                    int level = indent_length / min_indent;
-                    if (!in_multiline_snippet && level > current_level + 1)
-                        throw new Exception(string.Format(
-                            "Unexptected indentation in '{0}' at line {1}!", path, i));
-
-                    if (!in_multiline_snippet)
-                        current_level = level;
-
-                    // Register label (?)
-                    if (level == 0 && t.StartsWith(LABEL)) {
-                        var label_raw = t.Split(WHITESPACE)[1].Trim();
-                        labels.Add(label_raw.Substring(0, label_raw.Length - 1));
-                        label_lines_indices.Add(i);
-                    }
-
-                    // Add multiline snippet
-                    if (in_multiline_snippet && level <= current_level) {
-                        var id = rm.CodeManager.RegisterMethod(path, multiline_snippet_i.Value, snippet);
-
-                        var c = GetCodeSnippetPlaceholderLine(id, indent, min_indent, current_level);
-
-                        lines.Add(new RawLine(path, c, multiline_snippet_i.Value));
-
-                        snippet = string.Empty;
-                        in_multiline_snippet = false;
-                        multiline_snippet_i = null;
-
-                        continue;
-                    }
-
-                    // Check for indentation issues
-                    if (!in_multiline_snippet) {
-
-                        // Right now Python comments are preserved in the snippet
-                        var tt = StripTrailingComment(t).TrimEnd();
-
-                        var c = StripTrailingComment(r).TrimEnd();
-
-                        var tmp = new RawLine(path, r, i);
-
-                        if (tt == CSHARP_LINE) {
-
-                            // Flag multiline code snippet started
-                            in_multiline_snippet = true;
-                            multiline_snippet_i = i;
-
-                        } else {
-
-                            if (t.StartsWith("$ ")) {
-
-                                var id = rm.CodeManager.RegisterMethod(path, i, tt.Skip(1).ToString().Trim());
-                                c = GetCodeSnippetPlaceholderLine(id, indent, min_indent, current_level);
-
-                            } else if (identifier_re.IsMatch(tt) && tt != PASS && tt != RETURN) {
-
-                                var code = string.Format("{0}();", tt);
-                                var id = rm.CodeManager.RegisterMethod(path, i, code);
-                                c = GetCodeSnippetPlaceholderLine(id, indent, min_indent, current_level);
-
-                            } else if (t.StartsWith(IF) || t.StartsWith(ELIF)) {
-
-                                // Register if or elif condition snippet
-                                var m = conditional_re.Match(r);
-                                if (m != null) {
-                                    snippet = m.Groups[2].Value;
-                                    var id = rm.CodeManager.RegisterMethod(path, i, snippet);
-                                    snippet = string.Empty;
-                                    c = string.Format("{0} ${1}:", m.Groups[1].Value, id);
-                                }
-
-                            } else if (tt.Contains('"')) {
-
-                                var m = text_re.Match(tt);
-                                if (m.Success) {
-                                    var id = rm.TextManager.RegisterText(labels.Last(), m.Groups[1].Value);
-                                    c = text_re.Replace(c, "%" + id.ToString());
-                                }
-                                // Throw exception otherwise?
-
-                                m = trailing_if_re.Match(tt);
-                                if (m.Success) {
-                                    var code = m.Groups[1].Value;
-                                    var id = rm.CodeManager.RegisterMethod(path, i, code);
-                                    c = trailing_if_re.Replace(c, string.Format("if ${0}:", id));
-                                }
-
-                            }
-
-                            // Create line object
-                            lines.Add(new RawLine(path, c, i));
-
-                        }
-                        
-                    } else {
-                        snippet += r;
-                    }
-                }
-            }
-
-            static Script ParseLines2(RawLine[] lines, IndentChar indent_enum = IndentChar.Auto) {
+            static Script ParseLines2(PPVGPScript raw_script, IndentChar indent_enum = IndentChar.Auto) {
                 return null;
             }
 
