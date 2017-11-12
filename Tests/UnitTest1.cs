@@ -195,9 +195,14 @@ namespace Tests {
         public void TestNewParser() {
 
             var rm = new VGPrompter.Script.ResourceManager();
-            var lines = Script.Parser.ParseVGPScriptFile(NEW_DEMO, rm);
+            List<Script.Parser.RawLine> lines;
+            List<string> labels;
+            Script.Parser.ParseVGPScriptFile(NEW_DEMO, rm, out lines, out labels);
             foreach (var line in lines) {
                 Console.WriteLine(line.Text);
+            }
+            foreach (var label in labels) {
+                Console.WriteLine(label);
             }
 
         }

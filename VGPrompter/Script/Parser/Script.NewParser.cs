@@ -96,7 +96,7 @@ namespace VGPrompter {
                 return string.Format("{0}${1}", indent_str, id);
             }
 
-            public static RawLine[] ParseVGPScriptFile(string path, ResourceManager rm, IndentChar indent_enum = IndentChar.Auto) {
+            public static void ParseVGPScriptFile(string path, ResourceManager rm, out List<RawLine> lines, out List<string> labels, IndentChar indent_enum = IndentChar.Auto) {
                 var raw_lines = File.ReadAllLines(path);
 
                 // Get info on the indentation
@@ -104,7 +104,7 @@ namespace VGPrompter {
                 var min_indent = GetIndentationUnit(indent, raw_lines);
 
                 // Top-level elements
-                var labels = new List<string>();
+                labels = new List<string>();
                 var label_lines_indices = new List<int>();
 
                 // Code snippet
@@ -113,10 +113,7 @@ namespace VGPrompter {
                 var current_level = 0;
                 var snippet = string.Empty;
 
-                // ???
-                var tm = new TextManager();
-
-                var lines = new List<RawLine>();
+                lines = new List<RawLine>();
 
                 for (int i = 0; i < raw_lines.Count(); i++) {
                     var r = raw_lines[i];
@@ -141,7 +138,8 @@ namespace VGPrompter {
 
                     // Register label (?)
                     if (level == 0 && t.StartsWith(LABEL)) {
-                        labels.Add(t.Split(WHITESPACE)[0].Trim());
+                        var label_raw = t.Split(WHITESPACE)[1].Trim();
+                        labels.Add(label_raw.Substring(0, label_raw.Length - 1));
                         label_lines_indices.Add(i);
                     }
 
@@ -227,8 +225,6 @@ namespace VGPrompter {
                         snippet += r;
                     }
                 }
-
-                return lines.ToArray();
             }
 
             static Script ParseLines2(RawLine[] lines, IndentChar indent_enum = IndentChar.Auto) {
