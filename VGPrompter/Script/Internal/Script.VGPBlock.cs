@@ -7,7 +7,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class VGPBlock : IterableContainer {
+        internal class VGPBlock : IterableContainer {
 
             public string Label { get; private set; }
             public List<int> FromInstanceIDs { get; private set; }

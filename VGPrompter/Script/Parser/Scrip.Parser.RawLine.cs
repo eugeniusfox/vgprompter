@@ -7,7 +7,7 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
-            struct RawLine {
+            public struct RawLine {
 
                 const char COMMENT_CHAR = '#';
                 static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);

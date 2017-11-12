@@ -60,6 +60,29 @@ namespace VGPrompter {
                     item.Prime();
             }
 
+            /*public override string ToCSharpCode(int indent = 0) {
+                var code = Generator.ConcatenateStatements(
+                    Generator.GetOpenBlockStatement("if", "<CONDITION>"),
+                    Contents[0].ToCSharpCode(indent + 1),
+                    Generator.CloseBlock
+                );
+
+                foreach(var c in Contents.Skip(1)) {
+                    code += Generator.ConcatenateStatements(
+                        Generator.GetOpenBlockStatement("else if", "<CONDITION>"),
+                        Contents[0].ToCSharpCode(indent + 1),
+                        Generator.CloseBlock
+                    );
+                }
+                return code;
+            }*/
+
+            /*public override string ToCSharpCode(int indent = 0) {
+                int[] goto_indices;
+                var code = string.Format("<CONDITION> ? {0}");
+                return code;
+            }*/
+
         }
 
     }

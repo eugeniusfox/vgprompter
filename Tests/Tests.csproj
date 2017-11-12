@@ -63,6 +63,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Data\new_demo.rpy">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Data\demo.rpy">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

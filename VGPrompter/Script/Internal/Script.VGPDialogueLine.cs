@@ -5,7 +5,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        class VGPDialogueLine : Line, IWrappable, ITextual {
+        internal class VGPDialogueLine : Line, IWrappable, ITextual {
 
             public bool ToInterpolate { get; private set; }
             public string Tag { get; private set; }

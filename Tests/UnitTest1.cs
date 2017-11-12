@@ -14,9 +14,10 @@ namespace Tests {
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data\" + filename);
         }
 
-        public static readonly string TEST_SCRIPT_1 = "insc_test1.rpy";
-        public static readonly string TEST_SCRIPT_1_TAB = "insc_test1_tab.rpy";
-        public static readonly string DEMO = "demo.rpy";
+        public static readonly string TEST_SCRIPT_1 = "Data/insc_test1.rpy";
+        public static readonly string TEST_SCRIPT_1_TAB = "Data/insc_test1_tab.rpy";
+        public static readonly string DEMO = "Data/demo.rpy";
+        public static readonly string NEW_DEMO = "Data/new_demo.rpy";
 
         public Script LoadScript(string fp, Script.Parser.IndentChar indent = Script.Parser.IndentChar.Auto) {
 
@@ -188,6 +189,17 @@ namespace Tests {
 
         int SelectChoice(Script.Menu menu) {
             return (new Random()).Next(menu.Count - 1);
+        }
+
+        [TestMethod]
+        public void TestNewParser() {
+
+            var rm = new VGPrompter.Script.ResourceManager();
+            var lines = Script.Parser.ParseVGPScriptFile(NEW_DEMO, rm);
+            foreach (var line in lines) {
+                Console.WriteLine(line.Text);
+            }
+
         }
 
     }

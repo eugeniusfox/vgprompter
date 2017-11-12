@@ -39,13 +39,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mirror.cs" />
+    <Compile Include="Script\Binding\Script.VGPCSharpMethod.cs" />
+    <Compile Include="Script\Internal\Script.VGPCodeSnippet.cs" />
+    <Compile Include="Script\Parser\Script.NewParser.cs" />
+    <Compile Include="Script\Parser\Script.Parser.ParserRule.cs" />
+    <Compile Include="Script\ResourceManager.cs" />
+    <Compile Include="VGPScript\Public\VGPBaseChoice.cs" />
+    <Compile Include="VGPScript\Public\VGPBaseDialogueLine.cs" />
+    <Compile Include="VGPScript\Public\VGPBaseMenu.cs" />
+    <Compile Include="VGPScript\Public\VGPCallable.cs" />
+    <Compile Include="VGPScript\Public\VGPTaggedTextCallable.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CodeGenerator\Generator.cs" />
+    <Compile Include="VGPScript\VGPScript.cs" />
+    <Compile Include="Script\Internal\Base\Script.IGenerator.cs" />
     <Compile Include="Script\Internal\Base\Script.ITextual.cs" />
     <Compile Include="Script\Internal\Base\Script.IWrappable.cs" />
     <Compile Include="Script\Internal\Base\Script.VGPBaseReference.cs" />
     <Compile Include="Script\Internal\Script.VGPDefine.cs" />
+    <Compile Include="Script\Internal\Script.VGPDialogueBlock.cs" />
     <Compile Include="Script\Internal\Script.VGPFunction.cs" />
     <Compile Include="Script\Parser\Scrip.Parser.RawLine.cs" />
     <Compile Include="Script\Public\Character.cs" />
@@ -76,6 +91,8 @@
     <Compile Include="Script\Public\Base\Script.IScriptLineWrapper.cs" />
     <Compile Include="Script\Internal\Script.VGPWhile.cs" />
     <Compile Include="Script\Script.TextManager.cs" />
+    <Compile Include="VGPScript\VGPScript.VGPXDialogueBlock.cs" />
+    <Compile Include="VGPScript\VGPScript.VGPXLine.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

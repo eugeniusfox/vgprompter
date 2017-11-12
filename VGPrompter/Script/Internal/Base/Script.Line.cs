@@ -5,7 +5,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        abstract class Line {
+        internal abstract class Line {
 
             public abstract bool IsValid();
 

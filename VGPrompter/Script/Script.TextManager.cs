@@ -9,7 +9,7 @@ namespace VGPrompter {
 
     public partial class Script {
 
-        internal class TextManager {
+        public class TextManager {
 
             const string
                 GLOBAL_TAG = "$",
@@ -133,6 +133,11 @@ namespace VGPrompter {
                 _dialogue_strings[label][hash] = text;
 
                 return hash;
+            }
+
+            public int RegisterText(string label, string text) {
+                var hash = AddText(label, text);
+                return _dialogue_strings[label].Count - 1;
             }
 
             public void ToCSV(string path) {

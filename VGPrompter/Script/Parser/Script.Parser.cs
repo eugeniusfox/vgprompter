@@ -11,20 +11,6 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
-            struct ParserRule {
-                public string Keyword { get; private set; }
-                public Func<string[], VGPBlock, Line> Constructor { get; private set; }
-                public Func<string[], bool> Validator { get; private set; }
-                public int? Count { get; private set; }
-
-                public ParserRule(string keyword, Func<string[], VGPBlock, Line> constructor, int? count = null, Func<string[], bool> validator = null) : this() {
-                    Keyword = keyword;
-                    Constructor = constructor;
-                    Validator = validator;
-                    Count = count;
-                }
-            }
-
             public static Logger Logger = new Logger("Parser");
 
             const char
@@ -51,6 +37,8 @@ namespace VGPrompter {
 
                 INIT = "init",
                 PYTHON = "python",
+                CSHARP = "cs",
+
                 WITH = "with",
                 SHOW = "show",
                 HIDE = "hide",
@@ -146,7 +134,8 @@ namespace VGPrompter {
                 new ParserRule( IF,           (tokens, parent) => new Conditional.If(tokens[1], parent), 2),
                 new ParserRule( ELIF,         (tokens, parent) => new Conditional.ElseIf(tokens[1], parent), 2),
                 new ParserRule( ELSE,         (tokens, parent) => new Conditional.Else(parent), 1),
-                new ParserRule( WHILE,        (tokens, parent) => new VGPWhile(tokens[1], parent), 2)
+                new ParserRule( WHILE,        (tokens, parent) => new VGPWhile(tokens[1], parent), 2),
+                new ParserRule( CSHARP,       (tokens, parent) => new VGPCodeSnippet(), 1)
             };
 
             static bool IsInteger(string s) =>
@@ -186,7 +175,7 @@ namespace VGPrompter {
             }
 
             static char InferIndent(string[] lines) {
-                foreach (var x in lines)
+                foreach (var x in lines.Where(x => !string.IsNullOrEmpty(x.Trim()) && x.TrimStart()[0] != COMMENT_CHAR))
                     if (x[0] == WHITESPACE || x[0] == TAB)
                         return x[0];
 
@@ -219,7 +208,7 @@ namespace VGPrompter {
                 var min_indent = 1;
 
                 if (indent == WHITESPACE) {
-                    min_indent = indent_values.FirstOrDefault(x => x > 0);  // indent_values[0] == 0 ? indent_values[1] : indent_values[0];
+                    min_indent = indent_values.FirstOrDefault(x => x > 0);
 
                     if (min_indent < 1) min_indent = 1;
 
@@ -234,8 +223,6 @@ namespace VGPrompter {
                         throw new Exception(string.Format("Unexpected indentation in {0}!", lines[i].ExceptionString));
                     }
                 }
-
-                //if (diffs.Any(x => x > min_indent)) throw new Exception("Unexpected indentation!");
 
 
                 // 3. Get label blocks
@@ -339,7 +326,6 @@ namespace VGPrompter {
                     // Format checks were performed in a previous step
 
                     block = node2ILine(node, null, null, ref tm) as VGPBlock;
-                    //Logger.Log(block.ToString());
 
                     blocks.Add(block);
                 }
@@ -395,39 +381,47 @@ namespace VGPrompter {
                     if (iline == null) throw new Exception(string.Format("Null node from {0}!", node.Line.ExceptionString));
                     if (iline is VGPChoice && parent_type != typeof(VGPMenu)) throw new Exception(string.Format("Choice out of menu in {0}!", node.Line.ExceptionString));
 
-                    foreach (var child in node.Children) {
-                        var tmp = node2ILine(child, iline.GetType(), current_block, ref tm);
-                        if (tmp == null) throw new Exception(string.Format("Null child ILine in {0}!", node.Line.ExceptionString));
+                    if (iline is VGPCodeSnippet) {
 
-                        if (tmp is Conditional) {
+                        // node.Children.sel
 
-                            ifelse.AddCondition(tmp as Conditional);
-
-                        } else {
-
-                            // Add previous IfElse block
-                            if (!ifelse.IsEmpty)
-                                AddIfElse(ref ifelse, ref contents);
-
-                            // Skip VGPDefine objects
-                            //if (!(tmp is VGPDefine)) {
-                             contents.Add(tmp);
-                            //}
-
-                        }
-                    }
-
-                    if (!ifelse.IsEmpty)
-                        AddIfElse(ref ifelse, ref contents);
-
-                    if (iline is VGPMenu) {
-                        (iline as VGPMenu).Contents = contents.Select(x => x as VGPChoice).ToList();
-                    } else if (iline is VGPIfElse) {
-                        (iline as VGPIfElse).Contents = contents.Select(x => x as Conditional).ToList();
-                    } else if (iline is IterableContainer) {
-                        (iline as IterableContainer).Contents = contents;
                     } else {
-                        throw new Exception(string.Format("Unexpected ILine container in {0}!", node.Line.ExceptionString));
+
+                        foreach (var child in node.Children) {
+                            var tmp = node2ILine(child, iline.GetType(), current_block, ref tm);
+                            if (tmp == null) throw new Exception(string.Format("Null child ILine in {0}!", node.Line.ExceptionString));
+
+                            if (tmp is Conditional) {
+
+                                ifelse.AddCondition(tmp as Conditional);
+
+                            } else {
+
+                                // Add previous IfElse block
+                                if (!ifelse.IsEmpty)
+                                    AddIfElse(ref ifelse, ref contents);
+
+                                // Skip VGPDefine objects
+                                //if (!(tmp is VGPDefine)) {
+                                contents.Add(tmp);
+                                //}
+
+                            }
+                        }
+
+                        if (!ifelse.IsEmpty)
+                            AddIfElse(ref ifelse, ref contents);
+
+                        if (iline is VGPMenu) {
+                            (iline as VGPMenu).Contents = contents.Select(x => x as VGPChoice).ToList();
+                        } else if (iline is VGPIfElse) {
+                            (iline as VGPIfElse).Contents = contents.Select(x => x as Conditional).ToList();
+                        } else if (iline is IterableContainer) {
+                            (iline as IterableContainer).Contents = contents;
+                        } else {
+                            throw new Exception(string.Format("Unexpected ILine container in {0}!", node.Line.ExceptionString));
+                        }
+
                     }
 
                 }
@@ -678,10 +672,6 @@ namespace VGPrompter {
                 var line = fallback?.Invoke(tokens);
 
                 return line;
-
-                // if (line != null) return line;
-                // Utils.LogArray("Invalid line", tokens, Logger);
-                // throw new Exception(string.Format("Invalid line with tokens: {0}!", string.Join(", ", tokens)));
 
             }
 

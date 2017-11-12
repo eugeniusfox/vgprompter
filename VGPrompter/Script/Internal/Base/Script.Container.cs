@@ -5,8 +5,10 @@ namespace VGPrompter {
 
     public partial class Script {
 
+        internal interface IContainer { }
+
         [Serializable]
-        abstract class Container<T> : Line where T : Line {
+        internal abstract class Container<T> : Line, IContainer where T : Line {
 
             public abstract Script Script { get; set; }
 
@@ -31,6 +33,8 @@ namespace VGPrompter {
 
                 base.Validate();
             }
+
+            // public abstract string ToCSharpCode(int indent);
 
             public virtual void Prime() {
                 if (Contents == null)

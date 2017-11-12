@@ -5,7 +5,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        abstract class ChildContainer<T> : Container<T> where T : Line {
+        internal abstract class ChildContainer<T> : Container<T> where T : Line {
 
             Script _script;
             VGPBlock _parent;

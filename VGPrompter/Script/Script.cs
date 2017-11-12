@@ -6,7 +6,7 @@ using System.Collections;
 namespace VGPrompter {
 
     [Serializable]
-    public partial class Script {
+    public partial class Script : Mirror {
 
         public const string
             TRUE = "True",
@@ -14,7 +14,7 @@ namespace VGPrompter {
             DEFAULT_STARTING_LABEL = "start",
             COMMA = ", ";
 
-        Dictionary<string, VGPBlock> Blocks { get; set; }
+        internal Dictionary<string, VGPBlock> Blocks { get; set; }
         public string StartingLabel { get; set; }
         public uint? CurrentChoiceIndex { get; set; }
 

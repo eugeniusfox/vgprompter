@@ -7,7 +7,7 @@ namespace VGPrompter {
     public partial class Script {
 
         [Serializable]
-        abstract class IterableContainer : ChildContainer<Line> {
+        internal abstract class IterableContainer : ChildContainer<Line> {
 
             int _current_index = -1;
 
