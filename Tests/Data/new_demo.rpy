@@ -13,4 +13,9 @@
 label end:
     $ SomeAction();
     SomeAction
+    menu:
+        eu "First choice" if true:
+            "Test"
+        "Second choice" if 0 == 0:
+            "Test"
     pass

@@ -54,6 +54,7 @@ namespace VGPrompter {
             // Comment patterns
             static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
             static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
+            static Regex trailing_if_re = new Regex(@"if ( *.+):$");
             static Regex text_re = new Regex(@"""(.*)""");
 
             static string StripTrailingComment(string s) {
@@ -207,6 +208,13 @@ namespace VGPrompter {
                                     c = text_re.Replace(c, "%" + id.ToString());
                                 }
                                 // Throw exception otherwise?
+
+                                m = trailing_if_re.Match(tt);
+                                if (m.Success) {
+                                    var code = m.Groups[1].Value;
+                                    var id = rm.CodeManager.RegisterMethod(path, i, code);
+                                    c = trailing_if_re.Replace(c, string.Format("if ${0}:", id));
+                                }
 
                             }
 
