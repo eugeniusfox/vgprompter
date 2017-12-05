@@ -105,12 +105,12 @@ namespace VGPrompter {
 
                                 if (t.StartsWith("$ ")) {
 
-                                    var id = ResourceManager.CodeManager.RegisterMethod(path, i, tt.Skip(1).ToString().Trim());
+                                    var id = ResourceManager.CodeManager.RegisterMethod(path, i, tt.Substring(1).Trim());
                                     c = GetCodeSnippetPlaceholderLine(id, indent, min_indent, current_level);
 
                                 } else if (identifier_re.IsMatch(tt) && tt != PASS && tt != RETURN) {
 
-                                    var code = string.Format("{0}();", tt);
+                                    var code = string.Format("{0}()", tt);
                                     var id = ResourceManager.CodeManager.RegisterMethod(path, i, code);
                                     c = GetCodeSnippetPlaceholderLine(id, indent, min_indent, current_level);
 
@@ -149,13 +149,26 @@ namespace VGPrompter {
                             }
 
                         } else {
-                            snippet += r;
+                            snippet += r + "\n";
                         }
 
                     }
 
-                    
+                }
 
+                private Node ToTree(char indent, int min_indent) {
+                    var root_node = Node.Root;
+
+                    Node label_node = null;
+                    foreach (var block in Contents) {
+                        int nidx = 0;
+                        Node.IndentSpan = min_indent;
+                        label_node = new Node(block.Value[0], indent);
+                        ParseContents(block.Value.ToArray(), label_node, indent, ref nidx);
+                        root_node.Add(label_node);
+                    }
+
+                    return root_node;
                 }
 
             }
