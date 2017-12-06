@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using VGPrompter.Commons;
 
-namespace VGPrompter {
+namespace VGPrompter.CodeGen.CSharp {
     public static partial class Generator {
 
         const char TAB = '\t';
@@ -86,12 +87,12 @@ namespace VGPrompter {
         public static string WrapAction(string name, string body, bool is_public = true) => WrapFunction(name, body, typeof(void), is_public);
         public static string WrapCondition(string name, string body, bool is_public = true) => WrapFunction(name, body, typeof(bool), is_public);
 
-        public static void ast2enumerator(Script syntax_tree) {
+        /*public static void ast2enumerator(Script syntax_tree) {
 
             foreach (var b in syntax_tree.Blocks.Values) {
                 
             }
-        }
+        }*/
 
     }
 }

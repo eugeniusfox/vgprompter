@@ -54,7 +54,6 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CodeGenerator\Generator.cs" />
     <Compile Include="VGPScript\VGPScript.cs" />
     <Compile Include="Script\Internal\Base\Script.IGenerator.cs" />
     <Compile Include="Script\Internal\Base\Script.ITextual.cs" />

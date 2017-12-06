@@ -9,6 +9,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VGPrompter.Interpreter", "VGPrompter.Interpreter\VGPrompter.Interpreter.csproj", "{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VGPrompter.Commons", "VGPrompter.Commons\VGPrompter.Commons.csproj", "{56C4B5C9-3129-49C2-95E5-3542FEDAD5F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VGPrompter.Parser", "VGPrompter.Parser\VGPrompter.Parser.csproj", "{0F6928F7-948A-42E8-99BF-45D7A359906E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VGPrompter.CodeGen.CSharp", "VGPrompter.CodeGen.CSharp\VGPrompter.CodeGen.CSharp.csproj", "{F187D96E-BC98-4ADB-B1AE-223F56BF2A31}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +33,18 @@ Global
 		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56C4B5C9-3129-49C2-95E5-3542FEDAD5F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56C4B5C9-3129-49C2-95E5-3542FEDAD5F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56C4B5C9-3129-49C2-95E5-3542FEDAD5F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56C4B5C9-3129-49C2-95E5-3542FEDAD5F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F6928F7-948A-42E8-99BF-45D7A359906E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F6928F7-948A-42E8-99BF-45D7A359906E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F6928F7-948A-42E8-99BF-45D7A359906E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F6928F7-948A-42E8-99BF-45D7A359906E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F187D96E-BC98-4ADB-B1AE-223F56BF2A31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F187D96E-BC98-4ADB-B1AE-223F56BF2A31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F187D96E-BC98-4ADB-B1AE-223F56BF2A31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F187D96E-BC98-4ADB-B1AE-223F56BF2A31}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
