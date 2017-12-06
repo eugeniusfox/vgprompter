@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VGPrompter", "VGPrompter\VGPrompter.csproj", "{2229A66D-6DE9-4664-BBE2-77B56BF91E25}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{03D03C5E-71C4-4B89-BB87-66F1A635F0E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VGPrompter.Interpreter", "VGPrompter.Interpreter\VGPrompter.Interpreter.csproj", "{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,15 @@ Global
 		{03D03C5E-71C4-4B89-BB87-66F1A635F0E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03D03C5E-71C4-4B89-BB87-66F1A635F0E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03D03C5E-71C4-4B89-BB87-66F1A635F0E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1E12CDD-BAD1-4C6D-980A-3A2E1BF1BC47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2CEBF7DB-145E-45C4-A511-FE1C1FA24D20}
 	EndGlobalSection
 EndGlobal
