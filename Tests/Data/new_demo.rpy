@@ -11,7 +11,7 @@
         }
 
 label end:
-    $ SomeAction();
+    $ SomeAction()
     SomeAction
     menu:
         eu "First choice" if true:
