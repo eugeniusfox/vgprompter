@@ -38,6 +38,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ParsedLines\BaseClasses.cs" />
+    <Compile Include="ParsedLines\ParsedLine.cs" />
     <Compile Include="VGPScriptParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
