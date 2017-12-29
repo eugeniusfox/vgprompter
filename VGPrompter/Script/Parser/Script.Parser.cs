@@ -11,61 +11,7 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
-            struct ParserRule {
-                public string Keyword { get; private set; }
-                public Func<string[], VGPBlock, Line> Constructor { get; private set; }
-                public Func<string[], bool> Validator { get; private set; }
-                public int? Count { get; private set; }
-
-                public ParserRule(string keyword, Func<string[], VGPBlock, Line> constructor, int? count = null, Func<string[], bool> validator = null) : this() {
-                    Keyword = keyword;
-                    Constructor = constructor;
-                    Validator = validator;
-                    Count = count;
-                }
-            }
-
             public static Logger Logger = new Logger("Parser");
-
-            const char
-                WHITESPACE = ' ',
-                FLOAT_SUFFIX = 'f',
-                TAB = '\t',
-                QUOTE = '"',
-                SINGLE_QUOTE = '\'',
-                COLON = ':',
-                COMMENT_CHAR = '#',
-                UNDERSCORE = '_',
-                RENPY_PYLINE_CHAR = '$';
-
-            const string
-                IF = "if",
-                ELIF = "elif",
-                ELSE = "else",
-                PASS = "pass",
-                JUMP = "jump",
-                CALL = "call",
-                MENU = "menu",
-                LABEL = "label",
-                WHILE = "while",
-                RETURN = "return",
-
-                INIT = "init",
-                PYTHON = "python",
-                WITH = "with",
-                SHOW = "show",
-                HIDE = "hide",
-                PLAY = "play",
-                STOP = "stop",
-                SCENE = "scene",
-                IMAGE = "image",
-                DEFINE = "define",
-                PAUSE = "pause",
-                INIT_PYTHON = "init python",
-
-                PIPE = "|",
-                EQUAL = "=",
-                SCRIPT = "script";
 
             const NumberStyles NUMBER_STYLE = NumberStyles.Any;
 
@@ -76,89 +22,6 @@ namespace VGPrompter {
             }
 
             static readonly CultureInfo CULTURE_INFO = CultureInfo.InvariantCulture;
-
-            static readonly char[] COMMA_SPLIT = { ',' };
-
-            static readonly string[]
-                UNSUPPORTED_RENPY_KEYWORDS = {
-                    WITH, SHOW, HIDE, PLAY, STOP, SCENE, IMAGE, PAUSE
-                },
-
-                UNSUPPORTED_RENPY_BLOCK_KEYWORDS = {
-                    INIT, PYTHON, INIT_PYTHON
-                };
-
-            const string
-                IDENTIFIER = @"[a-zA-Z_]\w*",
-                NUMERIC = @"\d+(?:\.\d+(?:f)?)?",
-                DOUBLE_QUOTED_STRING_LITERAL = @""".*""",
-                DOUBLE_QUOTED_STRING_LITERAL_CAPTURING = @"""(.*)""";
-
-
-            static readonly string
-
-                LITERAL = string.Format(
-                    @"(?:{0}|"".*""|'.*'|{1}|True|False)", IDENTIFIER, NUMERIC),
-
-                FUNCTION_CALL = string.Format(
-                    @"({0})\s*(?:\(({1}(?:,{1})*)?\))?", IDENTIFIER, LITERAL),
-
-                LINE_RE = string.Format(
-                    @"^(?:({0}) )?{1}$", IDENTIFIER, DOUBLE_QUOTED_STRING_LITERAL_CAPTURING),
-
-                DEFINE_RE = string.Format(
-                    @"^define\s+({0})\s+=\s+(?:{1}|({2}))\s*$", IDENTIFIER, DOUBLE_QUOTED_STRING_LITERAL_CAPTURING, NUMERIC),
-
-                CHOICE_RE = string.Format(
-                    @"^(?:({0})\s+)?{1}(?:\s+if\s+({2}))?$", IDENTIFIER, DOUBLE_QUOTED_STRING_LITERAL_CAPTURING, FUNCTION_CALL);
-
-
-            static Regex line_re = new Regex(LINE_RE, RegexOptions.Compiled);
-            static Regex define_re = new Regex(DEFINE_RE, RegexOptions.Compiled);
-            static Regex choice_re = new Regex(CHOICE_RE, RegexOptions.Compiled);
-
-            public static Regex string_interpolation_re = new Regex(@"(?<=(?<!\\)\[)\w+(?=\])", RegexOptions.Compiled);
-            public static Regex nested_interpolation_re = new Regex(@"\[[^\]]*\[", RegexOptions.Compiled);
-
-            static Regex inline_comment_re = new Regex(@"(.*"".*""|.*)\s+#.*$", RegexOptions.Compiled);
-            static Regex comment_quotes_re = new Regex(@"(?<=(?:"".*?"").*?)\#.*?$", RegexOptions.Compiled);
-            static Regex comment_no_quotes_re = new Regex(@"(\#.*?)$", RegexOptions.Compiled);
-
-            static Regex function_call_re = new Regex(FUNCTION_CALL, RegexOptions.Compiled);
-            static Regex function_call_line_re = new Regex(string.Format("^{0}$", FUNCTION_CALL), RegexOptions.Compiled);
-
-            // Legacy regular expressions
-            static Regex unsupported_renpy_re = new Regex(string.Format(@"^({0}) \w+", string.Join(PIPE, UNSUPPORTED_RENPY_KEYWORDS)), RegexOptions.Compiled);
-            static Regex unsupported_renpy_block_re = new Regex(string.Format(@"^({0}) ?.*:$", string.Join(PIPE, UNSUPPORTED_RENPY_BLOCK_KEYWORDS)), RegexOptions.Compiled);
-            // static Regex define_value_re = new Regex(@"(?:""(.*)""|(\d+(?:\.\d+)?))", RegexOptions.Compiled);
-            // static Regex integer_re = new Regex(@"^\d+$", RegexOptions.Compiled);
-
-            // The DEFINE rule is never used (due to the non-standard tokenization it requires)
-            static ParserRule[] TopLevelRules = new ParserRule[] {
-                new ParserRule( LABEL,        (tokens, parent) => new VGPBlock(tokens[1].Substring(0, tokens[1].Length - 1)), 2,
-                                              (tokens)         => tokens[1][tokens[1].Length - 1] == COLON)
-                /*new ParserRule( DEFINE,       (tokens, parent) => new VGPDefine(tokens[1], UnescapeTextString(UnquoteString(tokens[3])), false), 4,
-                                              (tokens)         => tokens[2] == EQUAL && define_value_re.IsMatch(tokens[3]))*/
-            };
-
-            static ParserRule[] LeafRules = new ParserRule[] {
-                new ParserRule( PASS,         (tokens, parent) => new VGPPass(), 1),
-                new ParserRule( RETURN,       (tokens, parent) => new VGPReturn(), 1),
-                new ParserRule( JUMP,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: false), 2),
-                new ParserRule( CALL,         (tokens, parent) => new VGPGoTo(tokens[1], is_call: true), 2)
-                /*new ParserRule( string.Empty, (tokens, parent) => new VGPReference(tokens[0], argv: tokens.Length > 1 ? tokens.Skip(1).ToArray() : null), null,
-                                              (tokens)         => true)*/
-            };
-
-            static ParserRule[] NodeRules = new ParserRule[] {
-                new ParserRule( MENU,         (tokens, parent) => new VGPMenu(parent, tokens.Length == 2 ? (int?)int.Parse(tokens[1]) : null), null,
-                                              (tokens)         => tokens.Length == 1 || (tokens.Length == 2 && IsInteger(tokens[1]))),
-
-                new ParserRule( IF,           (tokens, parent) => new Conditional.If(tokens[1], parent), 2),
-                new ParserRule( ELIF,         (tokens, parent) => new Conditional.ElseIf(tokens[1], parent), 2),
-                new ParserRule( ELSE,         (tokens, parent) => new Conditional.Else(parent), 1),
-                new ParserRule( WHILE,        (tokens, parent) => new VGPWhile(tokens[1], parent), 2)
-            };
 
             static bool IsInteger(string s) =>
                 s.All(c => char.IsDigit(c));
@@ -379,22 +242,6 @@ namespace VGPrompter {
                 if (node.IsEmpty) {
 
                     // Leaf
-
-                    /*if (line.Contains(QUOTE)) {
-
-                        iline = GetLineLeaf(line, current_block.Label, ref tm);
-
-                    } else {
-
-                        tokens = line.Split(WHITESPACE);
-
-                        //Console.WriteLine(string.Format(">>> {0}", string.Join(", ", tokens)));
-
-                        //if (!tokens.All(y => y.All(x => char.IsLetterOrDigit(x) || x == UNDERSCORE || x == '(' || x == ')' || x == ',')))
-                            //throw new Exception(string.Format("Invalid characters for a functional line in {0}!", node.Line.ExceptionString));
-
-                        iline = tokens2Leaf(tokens);
-                    }*/
 
                     tokens = line.Split(WHITESPACE);
 
@@ -745,26 +592,7 @@ namespace VGPrompter {
                 return tokens2Line(NodeRules, tokens, parent);
             }
 
-
             /* Load and pre-filter rows */
-
-            struct RawLine {
-                public string Source { get; private set; }
-                public string Text { get; private set; }
-                public int Index { get; private set; }
-
-                public string ExceptionString => string.Format("'{0}' at line {1}: {2}!", Source, Index, Text);
-
-                public RawLine(string source, string text, int index) : this() {
-                    Source = source;
-                    Text = text;
-                    Index = index;
-                }
-
-                public RawLine Trim() {
-                    return new RawLine(Source, Text.Trim(), Index);
-                }
-            }
 
             static IEnumerable<RawLine> ReadLines(string path, bool ignore_unsupported_renpy = false) {
                 return

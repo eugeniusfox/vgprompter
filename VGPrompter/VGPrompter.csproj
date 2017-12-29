@@ -47,6 +47,9 @@
     <Compile Include="Script\Internal\Base\Script.VGPBaseReference.cs" />
     <Compile Include="Script\Internal\Script.VGPDefine.cs" />
     <Compile Include="Script\Internal\Script.VGPFunction.cs" />
+    <Compile Include="Script\Parser\Script.Parser.RawLine.cs" />
+    <Compile Include="Script\Parser\Script.Parser.Rules.cs" />
+    <Compile Include="Script\Parser\Script.Parser.Patterns.cs" />
     <Compile Include="Script\Public\Character.cs" />
     <Compile Include="Script\Public\Script.Reference.cs" />
     <Compile Include="Script\Public\Script.DialogueLine.cs" />
