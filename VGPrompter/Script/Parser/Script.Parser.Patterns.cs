@@ -104,6 +104,7 @@ namespace VGPrompter {
                 literal_boolean_re = new Regex(@"^(?:True|False)$", RegexOptions.Compiled),
                 literal_float_re = new Regex(@"^\d+(?:\.\d+)?f$", RegexOptions.Compiled),
                 literal_double_re = new Regex(@"^\d+\.\d+$", RegexOptions.Compiled),
+                literal_int_re = new Regex(@"^\d+$", RegexOptions.Compiled),
                 literal_string_re = new Regex(@"^(?:"".*""|'.*')$", RegexOptions.Compiled);
 
         }

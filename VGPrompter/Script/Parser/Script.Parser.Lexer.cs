@@ -23,6 +23,7 @@ namespace VGPrompter {
                 ArgumentList,
                 Identifier,
                 StringLiteral,
+                IntegerLiteral,
                 FloatLiteral,
                 DoubleLiteral,
                 BooleanLiteral,
@@ -83,6 +84,8 @@ namespace VGPrompter {
                             return TokenType.Identifier;
                         } else if (literal_string_re.Match(s).Success) {
                             return TokenType.StringLiteral;
+                        } else if (literal_int_re.Match(s).Success) {
+                            return TokenType.IntegerLiteral;
                         } else if (literal_boolean_re.Match(s).Success) {
                             return TokenType.BooleanLiteral;
                         } else if (literal_float_re.Match(s).Success) {
