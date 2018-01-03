@@ -249,6 +249,8 @@ namespace VGPrompter {
                 string[] tokens;
                 VGPBlock current_block = block;
 
+                Token[] ptokens = Tokenize(line);
+
                 if (node.IsEmpty) {
 
                     // Leaf
@@ -294,7 +296,8 @@ namespace VGPrompter {
                     } else if (parent_type == typeof(VGPMenu)) {
                         iline = GetChoiceNode(trimmed_line, current_block, ref tm);
                     } else {
-                        iline = tokens2Node(trimmed_line.Split(WHITESPACE), current_block);
+                        // iline = tokens2Node(trimmed_line.Split(WHITESPACE), current_block);
+                        iline = tokens2Node2(ptokens, current_block);
                     }
 
                     if (iline == null) throw new Exception(string.Format("Null node from {0}!", node.Line.ExceptionString));
@@ -600,6 +603,15 @@ namespace VGPrompter {
 
             static Line tokens2Node(string[] tokens, VGPBlock parent) {
                 return tokens2Line(NodeRules, tokens, parent);
+            }
+
+            static Line tokens2Node2(Token[] tokens, VGPBlock parent) {
+                var first_token_type = tokens[0].Type;
+                foreach (var rule in NodeRules2) {
+                    if (rule.FirstTokenType == first_token_type)
+                        return rule.Parse(tokens, parent);
+                }
+                return null;
             }
 
             /* Load and pre-filter rows */
