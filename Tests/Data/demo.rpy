@@ -12,7 +12,7 @@ label start:
     eu "Pick a [noun], would you?" #asdfadf
 
     while True:
-        menu 5000: # [3, 2, 1]:  Introduce a way to set the order of the choices programmatically?
+        menu (5000): # [3, 2, 1]:  Introduce a way to set the order of the choices programmatically?
             "Green" if CurrentColorNotGreen:
                 TurnCubeGreen
             "[b]":
