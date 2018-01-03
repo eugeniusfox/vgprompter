@@ -11,8 +11,6 @@ namespace VGPrompter {
 
             struct Arguments {
 
-                public static Regex identifier_re = new Regex("^[A-z][A-z0-9_]*$", RegexOptions.Compiled);
-
                 public List<object> PositionalArguments { get; private set; }
                 public Dictionary<string, object> KeywordArguments { get; private set; }
 
@@ -25,16 +23,15 @@ namespace VGPrompter {
                     var args = new List<object>();
                     var kwargs = new Dictionary<string, object>();
 
-                    var argv = s.Split(',').Select(a => a.Trim());
+                    var argv = s.Split(COMMA_C).Select(a => a.Trim());
 
                     foreach (var a in argv) {
-                        if (a.Contains('=')) {
-                            var kvp = a.Split('=').Select(t => t.Trim()).ToArray();
+                        if (a.Contains(EQUAL_C)) {
+                            var kvp = a.Split(EQUAL_C).Select(t => t.Trim()).ToArray();
                             if (!identifier_re.Match(kvp[0]).Success) throw new Exception(string.Format("Invalid key '{0}'!", kvp[0]));
                             kwargs.Add(kvp[0], kvp[1]);
                         } else {
                             if (kwargs.Count > 0) throw new Exception("!!!");
-                            // if (a.Contains(' ')) throw new Exception("!!!");
                             args.Add(a);
                         }
                     }

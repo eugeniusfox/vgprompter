@@ -11,7 +11,7 @@ namespace VGPrompter {
                 public TokenType FirstTokenType { get; private set; }
                 public int MinTokenNumber { get; private set; }
                 public int MaxTokenNumber { get; private set; }
-                public bool TrailingComma { get; private set; }
+                public bool TrailingColon { get; private set; }
                 public Func<Token[], VGPBlock, Line> Constructor { get; private set; }
                 public Action<Token[]> Validator { get; private set; }
 
@@ -19,13 +19,14 @@ namespace VGPrompter {
                     TokenType first_token_type,
                     int min_tokens,
                     int max_tokens,
-                    bool trailing_comma,
+                    bool trailing_colon,
                     Func<Token[], VGPBlock, Line> constructor,
                     Action<Token[]> validator = null) : this() {
+
                     FirstTokenType = first_token_type;
                     MinTokenNumber = min_tokens;
                     MaxTokenNumber = max_tokens;
-                    TrailingComma = trailing_comma;
+                    TrailingColon = trailing_colon;
                     Constructor = constructor;
                     Validator = validator;
                 }
@@ -33,7 +34,7 @@ namespace VGPrompter {
                 public Line Parse(Token[] tokens, VGPBlock parent) {
                     if (tokens[0].Type != FirstTokenType)
                         throw new Exception("The first token is of the wrong type!");
-                    if (TrailingComma && tokens[tokens.Length - 1].Type != TokenType.Comma)
+                    if (TrailingColon && tokens[tokens.Length - 1].Type != TokenType.Colon)
                         throw new Exception("Missing trailing comma!");
                     if (tokens.Length < MinTokenNumber || tokens.Length > MaxTokenNumber)
                         throw new Exception("Unexpected number of tokens!");

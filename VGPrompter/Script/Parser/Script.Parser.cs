@@ -160,7 +160,7 @@ namespace VGPrompter {
                         if (ptokens.Length != 3)
                             throw new Exception(string.Format("Invalid number of tokens for label in {0}!", raw_line.ExceptionString));
 
-                        if (ptokens.Last().Type != TokenType.Comma)
+                        if (ptokens.Last().Type != TokenType.Colon)
                             throw new Exception(string.Format("Missing trailing comma for label in {0}!", raw_line.ExceptionString));
 
 

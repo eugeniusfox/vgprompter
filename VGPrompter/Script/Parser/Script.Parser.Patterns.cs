@@ -15,7 +15,9 @@ namespace VGPrompter {
                 COLON = ':',
                 COMMENT_CHAR = '#',
                 UNDERSCORE = '_',
-                RENPY_PYLINE_CHAR = '$';
+                RENPY_PYLINE_CHAR = '$',
+                COMMA_C = ',',
+                EQUAL_C = '=';
 
             const string
                 IF = "if",
@@ -58,7 +60,8 @@ namespace VGPrompter {
                 };
 
             const string
-                IDENTIFIER = @"[a-zA-Z_]\w*",
+                // IDENTIFIER = @"[a-zA-Z_]\w*",
+                IDENTIFIER = @"[A-z][A-z0-9_]*",
                 NUMERIC = @"\d+(?:\.\d+(?:f)?)?",
                 DOUBLE_QUOTED_STRING_LITERAL = @""".*""",
                 DOUBLE_QUOTED_STRING_LITERAL_CAPTURING = @"""(.*)""";
@@ -101,6 +104,7 @@ namespace VGPrompter {
             static Regex unsupported_renpy_block_re = new Regex(string.Format(@"^({0}) ?.*:$", string.Join(PIPE, UNSUPPORTED_RENPY_BLOCK_KEYWORDS)), RegexOptions.Compiled);
 
             static Regex
+                identifier_re = new Regex(string.Format("^{0}$", IDENTIFIER), RegexOptions.Compiled),
                 literal_boolean_re = new Regex(@"^(?:True|False)$", RegexOptions.Compiled),
                 literal_float_re = new Regex(@"^\d+(?:\.\d+)?f$", RegexOptions.Compiled),
                 literal_double_re = new Regex(@"^\d+\.\d+$", RegexOptions.Compiled),
