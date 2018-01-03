@@ -22,6 +22,11 @@ namespace VGPrompter {
                 Text,
                 ArgumentList,
                 Identifier,
+                StringLiteral,
+                FloatLiteral,
+                DoubleLiteral,
+                BooleanLiteral,
+                Equal,
                 Comma,
                 If,
                 ElIf,
@@ -71,10 +76,22 @@ namespace VGPrompter {
                         return TokenType.Define;
                     case MENU:
                         return TokenType.Menu;
+                    case EQUAL:
+                        return TokenType.Equal;
                     default:
-                        if (!Arguments.identifier_re.Match(s).Success)
+                        if (Arguments.identifier_re.Match(s).Success) {
+                            return TokenType.Identifier;
+                        } else if (literal_string_re.Match(s).Success) {
+                            return TokenType.StringLiteral;
+                        } else if (literal_boolean_re.Match(s).Success) {
+                            return TokenType.BooleanLiteral;
+                        } else if (literal_float_re.Match(s).Success) {
+                            return TokenType.FloatLiteral;
+                        } else if (literal_double_re.Match(s).Success) {
+                            return TokenType.DoubleLiteral;
+                        } else {
                             throw new Exception(string.Format("Invalid token '{0}'", s));
-                        return TokenType.Identifier;
+                        }
                 }
             }
 
