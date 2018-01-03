@@ -128,6 +128,7 @@ namespace VGPrompter {
                     var raw_line = lines[i];
 
                     line = raw_line.Text.Trim();
+
                     //n = line.Length;
 
                     /*if (line[n - 1] != COLON)
@@ -138,9 +139,10 @@ namespace VGPrompter {
                         continue;
                     }
 
-                    //var label_tokens = line.Substring(0, n - 1).Split(WHITESPACE);
+                    var ptokens = Tokenize(line);
+                    var first_token_type = ptokens[0].Type;
 
-                    if (line.StartsWith(DEFINE)) {
+                    if (first_token_type == TokenType.Define) {
 
                         var definition = GetDefinition(line, ref tm);
 
@@ -150,11 +152,19 @@ namespace VGPrompter {
                             throw new Exception(string.Format("Variable '{0}' already initialized in {1}!", definition.Key, raw_line.ExceptionString));
                         }
 
-                    } else if (line.StartsWith(LABEL)) {
+                    } else if (first_token_type == TokenType.Label) {
 
-                        var block = tokens2TopLevel(line.Split(WHITESPACE)) as VGPBlock;
+                        foreach (var t in ptokens)
+                            Console.WriteLine(string.Format("{0} -> {1}", t.Type, t.Value));
 
-                        if (block == null) throw new Exception(string.Format("Invalid label in {0}!", raw_line.ExceptionString));
+                        if (ptokens.Length != 3)
+                            throw new Exception(string.Format("Invalid number of tokens for label in {0}!", raw_line.ExceptionString));
+
+                        if (ptokens.Last().Type != TokenType.Comma)
+                            throw new Exception(string.Format("Missing trailing comma for label in {0}!", raw_line.ExceptionString));
+
+
+                        var block = new VGPBlock(ptokens[1].Value.ToString());
 
                         labels.Add(block.Label);
                         label_lines_indices_tmp.Add(i);
