@@ -9,7 +9,7 @@ namespace VGPrompter {
         [Serializable]
         abstract class IterableContainer : ChildContainer<Line> {
 
-            int _current_index = -1;
+            // int _current_index = -1;
 
             IEnumerator OnMenu(
                 Menu menu,

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace VGPrompter {
 
@@ -28,10 +27,12 @@ namespace VGPrompter {
                     foreach (var a in argv) {
                         if (a.Contains(EQUAL_C)) {
                             var kvp = a.Split(EQUAL_C).Select(t => t.Trim()).ToArray();
-                            if (!identifier_re.Match(kvp[0]).Success) throw new Exception(string.Format("Invalid key '{0}'!", kvp[0]));
+                            if (!identifier_re.Match(kvp[0]).Success)
+                                throw new Exception(string.Format("Invalid key '{0}'!", kvp[0]));
                             kwargs.Add(kvp[0], kvp[1]);
                         } else {
-                            if (kwargs.Count > 0) throw new Exception("!!!");
+                            if (kwargs.Count > 0)
+                                throw new Exception("Positional argument following named argument!");
                             args.Add(a);
                         }
                     }

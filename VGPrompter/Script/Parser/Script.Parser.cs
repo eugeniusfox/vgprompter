@@ -146,7 +146,8 @@ namespace VGPrompter {
 
                         var definition = GetDefinition(line, ref tm);
 
-                        if (definition == null) throw new Exception(string.Format("Invalid definition in {0}!", raw_line.ExceptionString));
+                        if (definition == null)
+                            throw new Exception(string.Format("Invalid definition in {0}!", raw_line.ExceptionString));
 
                         if (!tm.TryAddDefinition(definition.Key, definition.Value)) {
                             throw new Exception(string.Format("Variable '{0}' already initialized in {1}!", definition.Key, raw_line.ExceptionString));
@@ -259,9 +260,11 @@ namespace VGPrompter {
 
                     iline = tokens2Leaf(tokens);
 
-                    if (iline == null) iline = GetLineLeaf(line, current_block.Label, ref tm);
+                    if (iline == null)
+                        iline = GetLineLeaf(line, current_block.Label, ref tm);
 
-                    if (iline == null) throw new Exception(string.Format("Null leaf from line '{0}'", node.Line.ExceptionString));
+                    if (iline == null)
+                        throw new Exception(string.Format("Null leaf from line '{0}'", node.Line.ExceptionString));
 
                     /*var definition = iline as VGPDefine;
                     if (definition != null) {
@@ -280,7 +283,8 @@ namespace VGPrompter {
                     var contents = new List<Line>();
                     var ifelse = new VGPIfElse(current_block);
 
-                    if (line[n - 1] != COLON) throw new Exception(string.Format("Expected ending colon in {0}!", node.Line.ExceptionString));
+                    if (line[n - 1] != COLON)
+                        throw new Exception(string.Format("Expected trailing colon in {0}!", node.Line.ExceptionString));
 
                     var trimmed_line = line.Substring(0, n - 1);
 
@@ -604,7 +608,7 @@ namespace VGPrompter {
             static Line tokens2Node(string[] tokens, VGPBlock parent) {
                 return tokens2Line(NodeRules, tokens, parent);
             }
-
+            
             static Line tokens2Node2(Token[] tokens, VGPBlock parent) {
                 var first_token_type = tokens[0].Type;
                 foreach (var rule in NodeRules2) {
@@ -615,6 +619,8 @@ namespace VGPrompter {
             }
 
             /* Load and pre-filter rows */
+
+            
 
             static IEnumerable<RawLine> ReadLines(string path, bool ignore_unsupported_renpy = false) {
                 return
