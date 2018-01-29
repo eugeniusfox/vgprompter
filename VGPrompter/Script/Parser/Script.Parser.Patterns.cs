@@ -104,12 +104,12 @@ namespace VGPrompter {
             static Regex unsupported_renpy_block_re = new Regex(string.Format(@"^({0}) ?.*:$", string.Join(PIPE, UNSUPPORTED_RENPY_BLOCK_KEYWORDS)), RegexOptions.Compiled);
 
             static Regex
-                identifier_re = new Regex(string.Format("^{0}$", IDENTIFIER), RegexOptions.Compiled),
-                literal_boolean_re = new Regex(@"^(?:True|False)$", RegexOptions.Compiled),
-                literal_float_re = new Regex(@"^\d+(?:\.\d+)?f$", RegexOptions.Compiled),
-                literal_double_re = new Regex(@"^\d+\.\d+$", RegexOptions.Compiled),
-                literal_int_re = new Regex(@"^\d+$", RegexOptions.Compiled),
-                literal_string_re = new Regex(@"^(?:"".*""|'.*')$", RegexOptions.Compiled);
+                identifier_re        = new Regex(string.Format("^{0}$", IDENTIFIER), RegexOptions.Compiled),
+                literal_boolean_re   = new Regex(@"^(?:True|False)$",                RegexOptions.Compiled),
+                literal_float_re     = new Regex(@"^\d+(?:\.\d+)?f$",                RegexOptions.Compiled),
+                literal_double_re    = new Regex(@"^\d+\.\d+$",                      RegexOptions.Compiled),
+                literal_int_re       = new Regex(@"^\d+$",                           RegexOptions.Compiled),
+                literal_string_re    = new Regex(@"^(?:"".*""|'.*')$",               RegexOptions.Compiled);
 
         }
 

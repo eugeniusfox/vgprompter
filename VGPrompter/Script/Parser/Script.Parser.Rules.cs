@@ -43,6 +43,47 @@ namespace VGPrompter {
                 }
             }
 
+            static ParserRule2[] TopLevelRules2 = new ParserRule2[] {
+                
+                // Label
+                LabelParserRule,
+
+                // Define
+                DefineParserRule
+            };
+
+            static ParserRule2 LabelParserRule = new ParserRule2(
+                    TokenType.Label, 3, 3, true,
+                    (tokens, parent) => new VGPBlock(tokens[1].Value.ToString()),
+                    (tokens) => {
+                        if (tokens[1].Type != TokenType.Identifier)
+                            throw new Exception("Identifier expected!");
+            });
+
+            static ParserRule2 DefineParserRule = new ParserRule2(
+                    TokenType.Define, 4, 4, true,
+                    (tokens, parent) => new VGPDefine(
+                        tokens[1].Value as string,
+                        tokens[3].Value as string,
+                        false),
+                    (tokens) => {
+                        if (tokens[1].Type != TokenType.Identifier)
+                            throw new Exception("Identifier expected!");
+                        if (tokens[2].Type != TokenType.Equal)
+                            throw new Exception("Equal symbol expected!");
+                        if (!(
+                            tokens[3].Type == TokenType.StringLiteral ||
+                            tokens[3].Type == TokenType.IntegerLiteral ||
+                            tokens[3].Type == TokenType.BooleanLiteral ||
+                            tokens[3].Type == TokenType.FloatLiteral ||
+                            tokens[3].Type == TokenType.DoubleLiteral))
+                            throw new Exception("Literal expected!");
+                    });
+
+            static ParserRule2[] LeafRules2 = new ParserRule2[] {
+
+            };
+
             static ParserRule2[] NodeRules2 = new ParserRule2[] {
 
                 // Menu

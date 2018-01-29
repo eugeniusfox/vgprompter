@@ -8,6 +8,28 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
+            class Node2 {
+                public RawLine Line { get; private set; }
+                public int Level => Line.Level;
+
+                public Node2() { }
+
+                public Node2(RawLine line) {
+                    Line = line;
+                }
+
+                public List<Node2> Children { get; set; }
+
+                public Node2 LastChild { get { return Children.LastOrDefault(); } }
+                public bool IsEmpty { get { return Children.Count == 0; } }
+
+                public static Node2 Root => new Node2();
+
+                public void Add(Node2 x) {
+                    Children.Add(x);
+                }
+            }
+
             class Node {
 
                 public static int _indent;
