@@ -39,6 +39,10 @@ namespace VGPrompter {
                 return "BLOCK " + Label + ": " + string.Join(COMMA, Contents.Select(x => x.ToString()).ToArray());
             }
 
+            public void LoadState(List<int> from_instance_ids) {
+                FromInstanceIDs = from_instance_ids;
+            }
+
         }
 
     }

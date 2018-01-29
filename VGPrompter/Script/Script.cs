@@ -53,6 +53,48 @@ namespace VGPrompter {
         public int CurrentBlockID;
         public bool HasReturned { get; private set; }
 
+        struct IterationState {
+            public IterableContainer CurrentIterable { get; private set; }
+            public int CurrentIterableLine { get; private set; }
+            public int CurrentBlockID  { get; private set; }
+            public Dictionary<string, List<int>> FromInstanceIDs { get; private set; }
+
+            public IterationState(IterableContainer currentIterable, int currentIterableLine, int currentBlockID, Dictionary<string, List<int>> fromInstanceIDs) : this() {
+                CurrentIterable = currentIterable;
+                CurrentIterableLine = currentIterableLine;
+                CurrentBlockID = currentBlockID;
+                FromInstanceIDs = fromInstanceIDs;
+            }
+        }
+
+        public byte[] GetState() {
+            var from_instance_ids = new Dictionary<string, List<int>>();
+            foreach (var kvp in Blocks) {
+                if (kvp.Value.FromInstanceIDs.Count > 0) {
+                    from_instance_ids.Add(kvp.Key, kvp.Value.FromInstanceIDs);
+                }
+            }
+            
+            return Utils.GetBinary(new IterationState(
+                CurrentIterable, CurrentIterableLine, CurrentBlockID, from_instance_ids));
+        }
+
+        public void LoadState(byte[] serialized_state) {
+            var state = Utils.FromBinary<IterationState>(serialized_state);
+            CurrentIterable = state.CurrentIterable;
+            CurrentIterableLine = state.CurrentIterableLine;
+            CurrentBlockID = state.CurrentBlockID;
+
+            VGPBlock b;
+            foreach (var kvp in state.FromInstanceIDs) {
+                if (Blocks.TryGetValue(kvp.Key, out b)) {
+                    b.LoadState(kvp.Value);
+                } else {
+                    throw new Exception("!!!");
+                }
+            }
+        }
+
         /* Get enumerator */
 
         IEnumerator GetAnyEnumerator(
