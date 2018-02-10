@@ -7,12 +7,12 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
-            struct ParserRule2 {
+            struct ParserRule2<T> {
                 public TokenType FirstTokenType { get; private set; }
                 public int MinTokenNumber { get; private set; }
                 public int MaxTokenNumber { get; private set; }
                 public bool TrailingColon { get; private set; }
-                public Func<Token[], VGPBlock, Line> Constructor { get; private set; }
+                public Func<Token[], VGPBlock, T> Constructor { get; private set; }
                 public Action<Token[]> Validator { get; private set; }
 
                 public ParserRule2(
@@ -20,7 +20,7 @@ namespace VGPrompter {
                     int min_tokens,
                     int max_tokens,
                     bool trailing_colon,
-                    Func<Token[], VGPBlock, Line> constructor,
+                    Func<Token[], VGPBlock, T> constructor,
                     Action<Token[]> validator = null) : this() {
 
                     FirstTokenType = first_token_type;
@@ -31,7 +31,7 @@ namespace VGPrompter {
                     Validator = validator;
                 }
 
-                public Line Parse(Token[] tokens, VGPBlock parent) {
+                public T Parse(Token[] tokens, VGPBlock parent) {
                     if (tokens[0].Type != FirstTokenType)
                         throw new Exception("The first token is of the wrong type!");
                     if (TrailingColon && tokens[tokens.Length - 1].Type != TokenType.Colon)
@@ -43,16 +43,7 @@ namespace VGPrompter {
                 }
             }
 
-            static ParserRule2[] TopLevelRules2 = new ParserRule2[] {
-                
-                // Label
-                LabelParserRule,
-
-                // Define
-                DefineParserRule
-            };
-
-            static ParserRule2 LabelParserRule = new ParserRule2(
+            static ParserRule2<VGPBlock> LabelParserRule = new ParserRule2<VGPBlock>(
                     TokenType.Label, 3, 3, true,
                     (tokens, parent) => new VGPBlock(tokens[1].Value.ToString()),
                     (tokens) => {
@@ -60,12 +51,11 @@ namespace VGPrompter {
                             throw new Exception("Identifier expected!");
             });
 
-            static ParserRule2 DefineParserRule = new ParserRule2(
+            static ParserRule2<KeyValuePair<string, string>> DefineParserRule = new ParserRule2<KeyValuePair<string, string>>(
                     TokenType.Define, 4, 4, true,
-                    (tokens, parent) => new VGPDefine(
+                    (tokens, parent) => new KeyValuePair<string, string>(
                         tokens[1].Value as string,
-                        tokens[3].Value as string,
-                        false),
+                        tokens[3].Value as string),
                     (tokens) => {
                         if (tokens[1].Type != TokenType.Identifier)
                             throw new Exception("Identifier expected!");
@@ -80,14 +70,14 @@ namespace VGPrompter {
                             throw new Exception("Literal expected!");
                     });
 
-            static ParserRule2[] LeafRules2 = new ParserRule2[] {
+            static ParserRule2<Line>[] LeafRules2 = new ParserRule2<Line>[] {
 
             };
 
-            static ParserRule2[] NodeRules2 = new ParserRule2[] {
+            static ParserRule2<Line>[] NodeRules2 = new ParserRule2<Line>[] {
 
                 // Menu
-                new ParserRule2(
+                new ParserRule2<Line>(
                     TokenType.Menu, 2, 3, true,
                     (tokens, parent) => new VGPMenu(parent),
                     (tokens) => {
@@ -96,12 +86,12 @@ namespace VGPrompter {
                     }),
 
                 // Else
-                new ParserRule2(
+                new ParserRule2<Line>(
                     TokenType.Else, 2, 2, true,
                     (tokens, parent) => new Conditional.Else(parent)),
 
                 // If
-                new ParserRule2(
+                new ParserRule2<Line>(
                     TokenType.If, 3, 4, true,
                     (tokens, parent) => new Conditional.If(tokens[1].Value.ToString(), parent),
                     (tokens) => {
@@ -110,7 +100,7 @@ namespace VGPrompter {
                     }),
 
                 // ElIf
-                new ParserRule2(
+                new ParserRule2<Line>(
                     TokenType.ElIf, 3, 4, true,
                     (tokens, parent) => new Conditional.ElseIf(tokens[1].Value.ToString(), parent),
                     (tokens) => {
@@ -119,7 +109,7 @@ namespace VGPrompter {
                     }),
 
                 // While
-                new ParserRule2(
+                new ParserRule2<Line>(
                     TokenType.While, 3, 4, true,
                     (tokens, parent) => new VGPWhile(tokens[1].Value.ToString(), parent),
                     (tokens) => {

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace VGPrompter {
 
@@ -9,143 +11,328 @@ namespace VGPrompter {
 
         public static partial class Parser {
 
-            class ParsedVGPScriptFile {
+            class RawLineWrapper<T> {
+                public string Key { get; private set; }
+                public RawLine Line { get; private set; }
+                public T Value { get; private set; }
+
+                public RawLineWrapper(string key, T value, RawLine line) {
+                    Key = key;
+                    Value = value;
+                    Line = line;
+                }
+            }
+
+            class ParsedVGPScriptProject {
 
                 public string SourceFileName { get; private set; }
                 public RawLine[] RawLines { get; private set; }
-                public string[] Labels { get; private set; }
-                public VGPDefine[] Definitions { get; private set; }
+                public Dictionary<string, RawLineWrapper<string>> Labels { get; private set; }
+                public Dictionary<string, RawLineWrapper<KeyValuePair<string, string>>> Definitions { get; private set; }
 
-                public ParsedVGPScriptFile() {
+                public List<VGPBlock> Blocks { get; private set; }
+
+                public ParsedVGPScriptProject() {
 
                 }
 
-                public ParsedVGPScriptFile(string src, RawLine[] raw_lines, string[] labels, VGPDefine[] definitions) {
+                /*public void AddTree(Node2 root) {
+                    Blocks = ParseRoot(root).ToList();
+                }*/
+
+                public void AddFile(string path, IndentChar indent) {
+                    var root = GetTree(ReadVGPSLines(path, indent));
+                    // AddTree(root);
+                    Blocks = ParseRoot(root).ToList();
+                }
+
+                /*public ParsedVGPScriptFile(string src, RawLine[] raw_lines, string[] labels, VGPDefine[] definitions) {
                     SourceFileName = src;
                     RawLines = raw_lines;
                     Labels = labels;
                     Definitions = definitions;
-                }
+                }*/
 
-                public static ParsedVGPScriptFile Parse(string src, RawLine[] lines, ref TextManager tm, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false) {
-
-                    List<int> top_lines_indices;
-
-                    // Validate the indentation and assign a value to RawLine.Level
-                    ComputeLineDepths(src, lines, out top_lines_indices, indent_enum);
-
-                    var labels = new List<string>();
-                    var label_lines_indices = new List<int>();
-                    var definitions = new List<VGPDefine>();
-                    var line = string.Empty;
-                    Token[] tokens;
-
-                    foreach (var i in top_lines_indices) {
-                        line = lines[i].Text;
-
-                        // Unsupported Ren'Py check [DEPRECATED]
-                        if (unsupported_renpy_block_re.IsMatch(line)) {
-                            Logger.Log(string.Format("Ignoring top-level Ren'Py block '{0}'", line));
-                            continue;
-                        }
-
-                        tokens = Tokenize(line);
-
-                        switch (tokens[0].Type) {
-
-                            case TokenType.Define:
-                                var definition = DefineParserRule.Parse(tokens, null) as VGPDefine;
-
-                                // Interpolation check?
-                                // ToDo
-
-                                // Register definition
-                                if (!tm.TryAddDefinition(definition.Key, definition.Value))
-                                    throw new Exception(string.Format(
-                                        "Variable '{0}' already initialized in {1}!", definition.Key, lines[i].ExceptionString));
-                                break;
-
-                            case TokenType.Label:
-                                var block = LabelParserRule.Parse(tokens, null) as VGPBlock;
-                                if (labels.Contains(block.Label))
-                                    throw new Exception(string.Format(
-                                        "Duplicate label in {0}!", lines[i].ExceptionString));
-                                labels.Add(block.Label);
-                                label_lines_indices.Add(i);
-                                break;
-
-                            default:
-                                throw new Exception(string.Format(
-                                    "Invalid top-level statement in {0}!", lines[i].ExceptionString));
-                        }
-
-                    }
+                // public static ParsedVGPScriptFile Parse(string src, RawLine[] lines, ref TextManager tm, IndentChar indent_enum = IndentChar.Auto, bool ignore_unsupported_renpy = false)
 
 
-                    return new ParsedVGPScriptFile(src, lines, labels.ToArray(), definitions.ToArray());
-                }
+                // 1. VGPScript File -> RawLines
 
-                static char InferIndent2(string src, string[] lines) {
+                static IEnumerable<RawLine> ReadVGPSLines(string path, IndentChar indent_enum = IndentChar.Auto) {
                     var i = 0;
-                    while (!(lines[i][0] == WHITESPACE || lines[i][0] == TAB)) i++;
-                    if (i == lines.Length)
-                        throw new Exception(string.Format(
-                            "No indentation found in '{0}'!", src));
-                    return lines[i - 1][0];
+                    char? indent_char = null;
+                    int? min_indent = null;
+                    int level = 0;
+                    int prev_level = 0;
+                    string line;
+
+                    switch (indent_enum) {
+                        case IndentChar.Tab:
+                            indent_char = TAB;
+                            break;
+                        case IndentChar.Whitespace:
+                            indent_char = WHITESPACE;
+                            break;
+                    }
+
+                    using (var fh = File.OpenText(path)) {
+                        while (!fh.EndOfStream) {
+                            i++;
+                            prev_level = level;
+                            line = fh.ReadLine().TrimEnd();
+
+                            // Skip empty line
+                            if (string.IsNullOrEmpty(line))
+                                continue;
+
+                            char first_whitespace;
+                            int indent = 0;
+                            if (line[0] == WHITESPACE || line[0] == TAB) {
+                                first_whitespace = line[0];
+                                if (indent_char.HasValue && indent_char.Value != first_whitespace)
+                                    throw new Exception("Inconsistentent indentation character!");
+                                int j = 0;
+                                while (line[j++] == first_whitespace) { }
+
+                                if (line[j] == WHITESPACE || line[j] == TAB)
+                                    throw new Exception("Inconsistentent indentation character!");
+
+                                line = line.Substring(j);
+
+                                indent = j - 1;
+
+                                if (min_indent.HasValue) {
+                                    if (indent < min_indent) {
+                                        throw new Exception("Unexpected indentation!");
+                                    } else if (indent % min_indent != 0) {
+                                        throw new Exception("Unexpected indentation: not a multiple!");
+                                    }
+                                } else {
+                                    min_indent = indent;
+                                }
+
+                                level = indent / min_indent.Value;
+
+                                if (level > prev_level && level - prev_level > 1)
+                                    throw new Exception("Unexpected indentation!");
+
+                            }
+
+                            if (line[0] == COMMENT_CHAR) {
+                                // Skip comment line
+                                continue;
+                            }
+
+                            // Handle in-line comments
+                            if (line.Contains('#')) {
+                                if (line.Contains('"')) {
+                                    line = comment_quotes_re.Replace(line, string.Empty);
+                                } else {
+                                    line = comment_no_quotes_re.Replace(line, string.Empty);
+                                }
+                                Console.WriteLine(line);
+                            }
+
+                            // Wrap line
+                            yield return new RawLine(path, line, i, level);
+                        }
+                    }
                 }
 
-                static void ComputeLineDepths(string src, RawLine[] lines, out List<int> top_level_lines, IndentChar indent_enum = IndentChar.Auto) {
+                // 2. RawLines -> Tree
 
-                    var lines_text = lines.Select(x => x.Text).ToArray();
+                static Node2 GetTree(IEnumerable<RawLine> lines) {
+                    var root = Node2.Root;
+                    int delta;
+                    Node2 child;
 
-                    top_level_lines = new List<int>();
+                    var stack = new Stack<Node2>();
+                    stack.Push(root);
 
-                    char indent;
+                    foreach (var line in lines) {
+                        if (line.Level < stack.Count - 2) {
+                            delta = stack.Count - line.Level - 1;
+                            for (int i = 0; i < delta; i++) {
+                                child = stack.Pop();
+                                stack.Peek().Add(child);
+                            }
+                        } else if (stack.Count > 1 && line.Level == stack.Count - 2) {
+                            child = stack.Pop();
+                            stack.Peek().Add(child);
+                        }
+                        stack.Push(new Node2(line));
+                    }
+                    for (int i = 0; i < stack.Count; i++) {
+                        child = stack.Pop();
+                        stack.Peek().Add(child);
+                    }
 
-                    if (indent_enum == IndentChar.Auto) {
-                        indent = InferIndent2(src, lines_text);
-                    } else if (indent_enum == IndentChar.Tab) {
-                        indent = TAB;
-                    } else if (indent_enum == IndentChar.Whitespace) {
-                        indent = WHITESPACE;
+                    return root;
+                }
+
+                // 3. Tree -> VGPBlocks
+
+                IEnumerable<VGPBlock> ParseRoot(Node2 root) {
+
+                    foreach (var node in root.Children) {
+                        switch (node.Line.Tokens[0].Type) {
+                            case TokenType.Label:
+                                var label = node.Line.Tokens[0].Value as string;
+                                if (Labels.ContainsKey(label))
+                                    throw new Exception("Duplicate label!");
+                                Labels.Add(label, new RawLineWrapper<string>(label, null, node.Line));
+                                yield return (VGPBlock)ParseNode(node, null);
+                                break;
+                            case TokenType.Define:
+                                var kvp = DefineParserRule.Parse(node.Line.Tokens, null);
+                                var definition = new RawLineWrapper<KeyValuePair<string, string>>(kvp.Key, kvp, node.Line);
+                                if (Definitions.ContainsKey(kvp.Key))
+                                    throw new Exception("Global variable assigned multiple times!");
+                                Definitions.Add(definition.Key, definition);
+                                break;
+                            default:
+                                throw new Exception("Invalid top level statement!");
+                        }
+                    }
+
+                }
+
+                Line ParseNode(Node2 node, VGPBlock block) {
+                    var line = node.Line;
+                    var tokens = line.Tokens;
+
+                    var current_block = block ?? LabelParserRule.Parse(tokens, null);
+
+                    Line current_line = null;
+                    var contents = new List<Line>();
+                    VGPIfElse ifelse = new VGPIfElse(current_block);
+
+                    if (node.IsEmpty) {
+                        // Leaf
+                        current_line = tokens2line2(tokens, LeafRules2, current_block);
                     } else {
-                        throw new Exception("Invalid indent character!");
-                    }
+                        // Block or other node
+                        current_line = block == null ? current_block : tokens2line2(tokens, NodeRules2, current_block);
 
-                    var depths = GetLineDepths(lines_text, indent);
+                        foreach (var child in node.Children) {
+                            var tmp = ParseNode(child, current_block);
+                            if (tmp == null) throw new Exception(string.Format("Null child ILine in {0}!", node.Line.ExceptionString));
 
-                    var indent_values = depths.Distinct().OrderBy(x => x).ToArray();
-
-
-                    // 1. Is it a tree?
-                    if (indent_values.Length < 2)
-                        throw new Exception("No indentation!");
-
-                    var min_indent = 1;
-
-                    if (indent == WHITESPACE) {
-                        min_indent = indent_values.FirstOrDefault(x => x > 0);
-
-                        if (min_indent < 1) min_indent = 1;
-
-                        // 2. Are all indents multiples of the indentation unit?
-                        if (indent_values.Any(x => x % min_indent != 0))
-                            throw new Exception("Irregular indentation!");
-                    }
-
-                    var diffs = Diff(depths);
-
-                    for (int i = 0; i < lines_text.Length - 1; i++) {
-                        lines[i].Level = depths[i] / min_indent;
-                        if (diffs[i] > min_indent) {
-                            throw new Exception(string.Format(
-                                "Unexpected indentation in {0}!", lines[i].ExceptionString));
+                            if (tmp is Conditional) {
+                                ifelse.AddCondition(tmp as Conditional);
+                            } else {
+                                // Add previous IfElse block
+                                if (!ifelse.IsEmpty)
+                                    AddIfElse(ref ifelse, ref contents);
+                                contents.Add(tmp);
+                            }
                         }
-                        if (depths[i] == 0) {
-                            top_level_lines.Add(i);
+
+                        // Add previous IfElse block
+                        if (!ifelse.IsEmpty)
+                            AddIfElse(ref ifelse, ref contents);
+
+                        if (current_line is VGPMenu) {
+                            (current_line as VGPMenu).Contents = contents.Select(x => x as VGPChoice).ToList();
+                        } else if (current_line is VGPIfElse) {
+                            (current_line as VGPIfElse).Contents = contents.Select(x => x as Conditional).ToList();
+                        } else if (current_line is IterableContainer) {
+                            (current_line as IterableContainer).Contents = contents;
+                        } else {
+                            throw new Exception(string.Format("Unexpected ILine container in {0}!", node.Line.ExceptionString));
                         }
                     }
 
+
+                    // current_line = tokens2line2(tokens, node.IsEmpty ? NodeRules2 : NodeRules2, parent_block);
+
+                    return current_line;
+                }
+
+                // 4. Path -> Script
+
+                /*public static ParsedVGPScriptProject FromFile(string path, IndentChar indent = IndentChar.Auto) {
+                    var pscript = new ParsedVGPScriptProject();
+                    var root = GetTree(ReadVGPSLines(path, indent));
+                    pscript.AddTree(root);
+                    return pscript;
+                }*/
+
+                public static Script Parse(string path, bool recursive = false, IndentChar indent = IndentChar.Auto) {
+
+                    var tm = new TextManager();
+                    var pscript = new ParsedVGPScriptProject();
+
+                    if (Directory.Exists(path)) {
+
+                        var lines = new List<RawLine>();
+                        var files = Utils.GetScriptFiles(path, recursive);
+                        foreach (var f in files) {
+                            pscript.AddFile(path, indent);
+                        }
+
+                    } else if (File.Exists(path)) {
+
+                        pscript.AddFile(path, indent);
+
+                    } else {
+
+                        throw new Exception("Missing source file or directory!");
+
+                    }
+
+                    // Register definitions
+
+                    foreach (var d in pscript.Definitions) {
+                        if (!tm.TryAddDefinition(d.Key, d.Value.Value.Value)) {
+                            throw new Exception("Variable redefined!");
+                        }
+                    }
+
+                    // Create Script
+
+                    return blocks2script(pscript.Blocks, ref tm);
+
+                }
+
+                static Line tokens2line2(Token[] tokens, ParserRule2<Line>[] rules, VGPBlock parent) {
+                    var first_token_type = tokens[0].Type;
+                    foreach (var rule in rules) {
+                        if (rule.FirstTokenType == first_token_type)
+                            return rule.Parse(tokens, parent);
+                    }
+                    return null;
+                }
+
+                static bool IsToInterpolate2(RawLine line, ref TextManager tm) {
+
+                    string ikey;
+                    var text = line.Text;
+
+                    if (nested_interpolation_re.Match(text).Success)
+                        throw new Exception(string.Format(
+                            "Nested interpolation in line '{0}'!", line.Text));
+
+                    var m = string_interpolation_re.Matches(text);
+                    var to_interpolate = m.Count > 0;
+
+                    if (to_interpolate) {
+                        foreach (Group g in m) {
+
+                            ikey = g.Value;
+
+                            if (string.IsNullOrEmpty(ikey))
+                                throw new Exception(string.Format(
+                                    "Empty variable name in dialogue line '{0}'!", line.Text));
+
+                            if (!tm.Globals.ContainsKey(ikey))
+                                throw new Exception(string.Format(
+                                    "Undefined variable '{0}' in dialogue line '{1}'!", ikey, line.Text));
+
+                        }
+                    }
+
+                    return to_interpolate;
                 }
 
             }
