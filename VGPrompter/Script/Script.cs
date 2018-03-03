@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace VGPrompter {
 
@@ -177,7 +178,7 @@ namespace VGPrompter {
         public static Script FromBinary(byte[] script_bytes, byte[] strings_bytes)
         {
             var script = FromBinary(script_bytes);
-            var rows = System.Text.Encoding.UTF8.GetString(strings_bytes);
+            var rows = Regex.Split(System.Text.Encoding.UTF8.GetString(strings_bytes), Environment.NewLine);
             script.LoadStrings(rows);
             return script;
         }
