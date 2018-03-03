@@ -152,13 +152,21 @@ namespace VGPrompter {
                 File.WriteAllText(path, sb.ToString());
             }
 
-            public void FromCSV(string path) {
+            public void FromCSV(string path)
+            {
+                var rows = File.ReadAllLines(path);
+                FromCSV(rows);
+            }
 
+            public void FromCSV(string[] rows)
+            {
                 _dialogue_strings.Clear();
                 _global_strings.Clear();
 
                 var tokens = new string[3];
-                foreach (var row in File.ReadAllLines(path)) {
+                foreach (var row in rows) {
+                    
+                    if (string.IsNullOrEmpty(row)) continue;
 
                     tokens = row.Split(SEPARATOR, 3);
                     var label = tokens[0];
@@ -175,9 +183,8 @@ namespace VGPrompter {
                     }
 
                 }
-
+                
             }
-
         }
 
     }
